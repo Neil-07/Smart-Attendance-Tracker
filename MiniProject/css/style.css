@@ -1,0 +1,662 @@
+/* Table of Contents
+---
+1. General Styles
+2. Typography
+3. Forms
+4. Buttons
+5. Header
+6. Sidebar
+7. Main Content & Cards
+8. Landing Page (Hero, Features)
+9. Footer
+10. Responsive Styles
+---
+*/
+
+/* 1. General Styles */
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+html, body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+}
+
+img {
+    max-width: 100%;
+    height: auto;
+}
+
+:root {
+    --primary-color: #4F46E5;
+    --secondary-color: #F3F4F6;
+    --text-primary: #111827;
+    --text-secondary: #6B7280;
+    --accent-color: #10B981;
+    --white: #fff;
+    --light-gray: #E5E7EB;
+    --border-radius: 8px;
+    --shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+body {
+    font-family: 'Poppins', sans-serif;
+    background-color: var(--secondary-color);
+    color: var(--text-primary);
+    margin: 0;
+    font-size: 16px;
+}
+
+.container {
+    max-width: 100%;
+    margin: 0;
+    padding: 0 20px;
+}
+
+.text-center {
+    text-align: center;
+}
+
+/* 2. Typography */
+h1, h2, h3, h4, h5, h6 {
+    color: var(--primary-color);
+    margin-top: 0;
+}
+
+h1 { font-size: 2.5rem; }
+h2 { font-size: 2rem; }
+h3 { font-size: 1.75rem; }
+p { color: var(--text-secondary); line-height: 1.6; }
+a { text-decoration: none; color: var(--primary-color); transition: color 0.3s ease; }
+a:hover { color: var(--accent-color); }
+
+/* 3. Forms */
+.form-container {
+    background-color: var(--white);
+    padding: 40px;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+}
+
+.input-group {
+    margin-bottom: 20px;
+    text-align: left;
+}
+
+.input-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.input-group input, .input-group select {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid var(--light-gray);
+    border-radius: var(--border-radius);
+    font-size: 1rem;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.input-group input:focus, .input-group select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.3);
+}
+
+/* 4. Buttons */
+.btn {
+    display: inline-block;
+    background-color: var(--primary-color);
+    color: var(--white);
+    padding: 12px 24px;
+    border: none;
+    border-radius: var(--border-radius);
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    width: 100%;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    text-align: center;
+}
+
+.btn:hover {
+    background-color: #4338CA; /* A slightly darker shade of primary */
+    transform: translateY(-2px);
+}
+
+.btn-secondary {
+    background-color: var(--accent-color);
+}
+
+.btn-secondary:hover {
+    background-color: #059669; /* A slightly darker shade of accent */
+}
+
+.card form .btn {
+    width: auto;
+}
+
+.btn-small {
+    padding: 0.6rem 0.75rem;
+    font-size: 0.75rem;
+    width: auto;
+}
+
+/* 5. Header */
+header {
+    background-color: var(--white);
+    padding: 20px 0;
+    border-bottom: 1px solid var(--light-gray);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    position: relative;
+}
+
+header .container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.logo a {
+    color: var(--primary-color);
+    font-size: 1.5rem;
+    font-weight: 700;
+    z-index: 1001;
+}
+
+/* Hamburger Menu Icon */
+.menu-toggle {
+    display: block; /* Show on mobile */
+    cursor: pointer;
+    z-index: 1001;
+}
+
+.hamburger {
+    width: 25px;
+    height: 3px;
+    background-color: var(--text-primary);
+    position: relative;
+    transition: background-color 0.3s ease-in-out;
+}
+
+.hamburger::before,
+.hamburger::after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 3px;
+    background-color: var(--text-primary);
+    left: 0;
+    transition: transform 0.3s ease-in-out;
+}
+
+.hamburger::before {
+    top: -8px;
+}
+
+.hamburger::after {
+    bottom: -8px;
+}
+
+.menu-toggle.active .hamburger {
+    background-color: transparent;
+}
+
+.menu-toggle.active .hamburger::before {
+    transform: rotate(45deg) translate(5px, 6px);
+}
+
+.menu-toggle.active .hamburger::after {
+    transform: rotate(-45deg) translate(5px, -6px);
+}
+
+/* Navigation Links */
+.nav-links {
+    display: none;
+    flex-direction: column;
+    width: 100%;
+    background-color: var(--white);
+    position: absolute;
+    top: 100%;
+    left: 0;
+    padding: 20px 0;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+}
+
+.nav-links.active {
+    display: flex;
+}
+
+.nav-links ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
+
+.nav-links ul li {
+    margin: 15px 0;
+}
+
+.nav-links a {
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+header nav a:hover {
+    color: var(--primary-color);
+}
+
+header nav .btn {
+    color: var(--white);
+}
+
+.nav-links .btn {
+    width: auto;
+    padding-left: 30px;
+    padding-right: 30px;
+}
+
+/* 6. Sidebar */
+.dashboard-layout {
+    display: flex;
+    min-height: 100vh;
+}
+
+.sidebar {
+    width: 250px;
+    background-color: var(--primary-color);
+    color: var(--white);
+    padding: 30px;
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar h2 {
+    color: var(--white);
+    text-align: center;
+    margin-bottom: 40px;
+    font-size: 1.5rem;
+}
+
+.sidebar ul {
+    list-style: none;
+    padding: 0;
+}
+
+.sidebar ul li a {
+    display: block;
+    color: var(--white);
+    padding: 15px;
+    border-radius: var(--border-radius);
+    margin-bottom: 10px;
+    transition: background-color 0.3s ease;
+    font-weight: 500;
+}
+
+.sidebar ul li a:hover, .sidebar ul li a.active {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.sidebar .sidebar-secondary-nav {
+    margin-top: auto;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* 7. Main Content & Cards */
+.main-content {
+    flex: 1;
+    padding: 40px;
+}
+
+.main-content header {
+    background: none;
+    box-shadow: none;
+    padding: 0 0 20px 0;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.main-content header a {
+    margin-left: 25px;
+    color: var(--text-secondary);
+    font-weight: 500;
+    transition: color 0.3s ease;
+}
+
+.main-content header a:hover {
+    color: var(--primary-color);
+}
+
+.card {
+    background-color: var(--white);
+    padding: 30px;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    margin-bottom: 30px;
+}
+
+.card h2 {
+    margin-bottom: 20px;
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.card-header h2 {
+    margin-bottom: 0;
+}
+
+/* Timetable styles */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+}
+th, td {
+    border: 1px solid var(--light-gray);
+    padding: 12px;
+    text-align: left;
+}
+th {
+    background-color: var(--secondary-color);
+    font-weight: 600;
+}
+.lunch-break, .short-break {
+    text-align: center;
+    font-style: italic;
+    background-color: var(--secondary-color);
+    color: var(--text-secondary);
+}
+
+.table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* 8. Landing Page (Hero, Features) */
+.hero {
+    padding: 60px 0; /* Reduced padding for mobile */
+    text-align: center;
+}
+
+.hero h1 {
+    font-size: 2rem; /* Smaller font size for mobile */
+    margin-bottom: 15px;
+}
+
+.hero p {
+    font-size: 1rem; /* Smaller font size for mobile */
+    max-width: 600px;
+    margin: 0 auto 30px auto;
+}
+
+.cta-buttons {
+    display: flex;
+    flex-direction: column; /* Stack buttons on mobile */
+    align-items: center;
+    gap: 15px; /* Space between stacked buttons */
+}
+
+.cta-buttons .btn {
+    width: 80%; /* Give some width, but not full */
+    max-width: 300px; /* Max width for consistency */
+}
+
+.image-below-buttons {
+    margin-top: 3rem; /* Adjusted margin */
+}
+
+.hero-image img {
+    max-width: 90%; /* Allow image to be a bit larger on mobile */
+    height: auto;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+}
+
+.features {
+    padding: 40px 0; /* Reduced padding for mobile */
+}
+
+.features h2 {
+    text-align: center;
+    margin-bottom: 30px; /* Reduced margin for mobile */
+}
+
+.features-grid {
+    display: grid;
+    grid-template-columns: 1fr; /* Force single column on mobile */
+    gap: 30px; /* Adjusted gap for mobile */
+}
+
+.feature-item {
+    text-align: center;
+}
+
+.feature-icon img {
+    height: 50px;
+    margin-bottom: 15px; /* Adjusted margin */
+}
+
+/* 9. Footer - Refactored for Mobile-First */
+footer {
+    background-color: var(--text-primary);
+    color: var(--white);
+    padding: 30px 0; /* Slightly reduced padding for mobile */
+    text-align: center;
+}
+
+footer .container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+footer ul {
+    display: flex;
+    flex-wrap: wrap; /* Allow items to wrap */
+    justify-content: center; /* Center items when wrapped */
+    margin-top: 15px; /* Adjusted margin */
+}
+
+footer ul li {
+    margin: 5px 10px; /* Adjusted margin for wrapped items */
+}
+
+footer ul li a {
+    color: var(--white);
+}
+
+/* 11. Dashboard Components */
+.table-controls {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 20px;
+}
+.table-controls select {
+    padding: 8px 12px;
+    border-radius: var(--border-radius);
+    border: 1px solid var(--light-gray);
+}
+.remove-btn {
+    background-color: #EF4444; /* Red */
+    color: white;
+    padding: 5px 10px;
+    border-radius: var(--border-radius);
+    border: none;
+    cursor: pointer;
+}
+
+/* 10. Responsive Styles */
+
+/* Desktop and bigger screens */
+@media (min-width: 769px) {
+    /* Desktop Navigation */
+    .menu-toggle {
+        display: none;
+    }
+
+    .nav-links {
+        display: flex;
+        position: static;
+        width: auto;
+        background-color: transparent;
+        box-shadow: none;
+        padding: 0;
+        flex-direction: row;
+        align-items: center;
+    }
+    
+    .nav-links ul {
+        flex-direction: row;
+    }
+
+    .nav-links ul li {
+        margin: 0 0 0 30px;
+    }
+
+    /* Hero Section Desktop Styles */
+    .hero {
+        padding: 100px 0;
+    }
+
+    .hero h1 {
+        font-size: 3.5rem;
+    }
+
+    .hero p {
+        font-size: 1.25rem;
+    }
+
+    .hero-image img {
+        max-width: 80%;
+    }
+
+    /* Features Section Desktop Styles */
+    .features {
+        padding: 80px 0;
+    }
+
+    .features h2 {
+        margin-bottom: 60px;
+    }
+
+    /* Footer Section Desktop Styles */
+    footer {
+        padding: 40px 0; /* Restore original padding */
+    }
+
+    footer ul {
+        flex-wrap: nowrap; /* Prevent wrapping on desktop */
+        margin-top: 20px; /* Restore original margin */
+    }
+
+    footer ul li {
+        margin: 0 15px; /* Restore original horizontal margin */
+    }
+
+    .sidebar .sidebar-secondary-nav {
+        display: none;
+    }
+}
+
+/* Tablet (2 columns features, bigger buttons) */
+@media (min-width: 600px) {
+    .cta-buttons {
+        flex-direction: row;
+        justify-content: center;
+        gap: 20px;
+    }
+
+    .cta-buttons .btn {
+        width: auto;
+        padding-left: 24px;
+        padding-right: 24px;
+    }
+    .features-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 30px;
+    }
+}
+
+
+/* General responsive styles for smaller screens (max-width queries for other elements) */
+@media (max-width: 768px) {
+    .sidebar {
+        position: fixed;
+        left: -250px;
+        transition: left 0.3s ease;
+        z-index: 1000;
+        height: 100%;
+    }
+
+    .sidebar.active {
+        left: 0;
+    }
+
+    .main-content {
+        width: 100%;
+        padding: 20px;
+    }
+
+    .main-content .nav-links {
+        display: none;
+    }
+    
+    /* Removed .features-grid, as it's now handled by min-width queries */
+    /* Removed h1, h2, h3 as they are handled by mobile-first and min-width queries */
+}
+
+@media (max-width: 480px) {
+    .form-container {
+        padding: 20px;
+    }
+
+    .card {
+        padding: 20px;
+    }
+}
+
+/* Centered Form Page Layout */
+.form-page-section {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 60px 20px;
+    min-height: calc(100vh - 200px); /* Adjust based on header/footer height estimate */
+}
+
+/* Simple Content Page Layout */
+.content-section {
+    padding: 60px 20px;
+    text-align: center;
+}
+
+.content-section h1 {
+    margin-bottom: 20px;
+}
+
+.content-section p {
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+}

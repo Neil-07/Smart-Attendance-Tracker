@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Attendance - Smart Attendance Tracker</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="dashboard-layout">
+        <div class="sidebar">
+            <h2>Dashboard</h2>
+            <ul>
+                <li><a href="main.html">Dashboard</a></li>
+                <li><a href="view-attendance.html" class="active">View Attendance</a></li>
+            </ul>
+            <ul class="sidebar-secondary-nav">
+                <li><a href="about.html">About</a></li>
+                <li><a href="contact.html">Contact</a></li>
+                <li><a href="help.html">Help</a></li>
+                <li><a href="index.html">Logout</a></li>
+            </ul>
+        </div>
+        <div class="main-content">
+            <header>
+                <div class="menu-toggle">
+                    <div class="hamburger"></div>
+                </div>
+                <nav class="nav-links">
+                    <a href="about.html">About</a>
+                    <a href="contact.html">Contact</a>
+                    <a href="help.html">Help</a>
+                    <a href="index.html">Logout</a>
+                </nav>
+            </header>
+            <div class="content">
+                <h1>View Attendance Record</h1>
+                <div class="card">
+                    <h2>Your Attendance Summary</h2>
+                    <p>This page provides a comprehensive overview of your attendance. You can view your attendance percentage for each subject, track your overall average, and check your status on the defaulter list. The records are updated in real-time, giving you an accurate and instant summary of your academic standing.</p>
+                    <canvas id="attendanceChart"></canvas>
+                </div>
+                <div class="card">
+                    <h2>Defaulter Status</h2>
+                    <p id="defaulter-status"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="js/main.js"></script>
+</body>
+</html>
