@@ -296,7 +296,7 @@ document.addEventListener("DOMContentLoaded", function() {
     const qrCodeImage = document.getElementById('qr-code-image');
     if (qrCodeImage) {
         // In a real application, this data would likely be dynamic (e.g., a session ID)
-        const qrData = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
+        const qrData = "https://smart-attendance-tracker-henna.vercel.app/";
         const qrCodeImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrData)}`;
         qrCodeImage.src = qrCodeImageUrl;
     }
