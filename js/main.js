@@ -32,6 +32,16 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     });
 
+    // Unified Dummy Data
+    const students = [
+        { name: 'John Doe', email: 'john.doe@example.com', className: 'Computer Science' },
+        { name: 'Jane Smith', email: 'jane.smith@example.com', className: 'Information Technology' },
+        { name: 'Peter Jones', email: 'peter.jones@example.com', className: 'Electronics' },
+        { name: 'Mary Johnson', email: 'mary.johnson@example.com', className: 'Computer Science' },
+        { name: 'James Brown', email: 'james.brown@example.com', className: 'Mechanical' },
+        { name: 'Patricia Davis', email: 'patricia.davis@example.com', className: 'Information Technology' }
+    ];
+
     // Manage Students Page
     const addStudentForm = document.getElementById('add-student-form');
     const studentTableBody = document.getElementById('student-table-body');
@@ -54,6 +64,11 @@ document.addEventListener("DOMContentLoaded", function() {
                 newRow.remove();
             });
         };
+
+        // Populate table with initial dummy data
+        students.forEach(student => {
+            addStudent(student.name, student.email, student.className);
+        });
 
         // Event listener for form submission
         addStudentForm.addEventListener('submit', (e) => {
@@ -105,6 +120,21 @@ document.addEventListener("DOMContentLoaded", function() {
                 "Date": "2025-09-30",
                 "Status": "Present",
                 "Class": "Electronics"
+            },
+            "Mary Johnson": {
+                "Date": "2025-09-30",
+                "Status": "Absent",
+                "Class": "Computer Science"
+            },
+            "James Brown": {
+                "Date": "2025-09-30",
+                "Status": "Present",
+                "Class": "Mechanical"
+            },
+            "Patricia Davis": {
+                "Date": "2025-09-30",
+                "Status": "Present",
+                "Class": "Information Technology"
             }
         };
 
@@ -224,23 +254,23 @@ document.addEventListener("DOMContentLoaded", function() {
         const classReportData = {
             "Computer Science": {
                 "Overall Attendance": "88%",
-                "Defaulters": ["Student A", "Student C"],
-                "Top Performers": ["Student B", "Student D"]
+                "Defaulters": ["Mary Johnson"],
+                "Top Performers": ["John Doe"]
             },
             "Information Technology": {
                 "Overall Attendance": "92%",
                 "Defaulters": [],
-                "Top Performers": ["Student E", "Student F"]
+                "Top Performers": ["Jane Smith", "Patricia Davis"]
             },
             "Electronics": {
                 "Overall Attendance": "85%",
-                "Defaulters": ["Student G"],
-                "Top Performers": ["Student H"]
+                "Defaulters": [],
+                "Top Performers": ["Peter Jones"]
             },
             "Mechanical": {
                 "Overall Attendance": "82%",
-                "Defaulters": ["Student I", "Student J", "Student K"],
-                "Top Performers": []
+                "Defaulters": [],
+                "Top Performers": ["James Brown"]
             }
         };
 
@@ -269,5 +299,104 @@ document.addEventListener("DOMContentLoaded", function() {
         const qrData = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
         const qrCodeImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrData)}`;
         qrCodeImage.src = qrCodeImageUrl;
+    }
+
+    // Teacher Timetable Edit/Save functionality
+    const editTimetableBtn = document.getElementById('edit-timetable-btn');
+    const teacherTimetableBody = document.querySelector('.timetable-center tbody');
+
+    if (editTimetableBtn && teacherTimetableBody && currentPage === 'teacher.html') {
+        let isEditing = false;
+
+        // Load timetable from local storage for teacher page
+        const loadTeacherTimetable = () => {
+            const savedTimetable = localStorage.getItem('teacherTimetable');
+            if (savedTimetable) {
+                const timetableData = JSON.parse(savedTimetable);
+                const rows = teacherTimetableBody.querySelectorAll('tr');
+                rows.forEach((row, rowIndex) => {
+                    const cells = row.querySelectorAll('td');
+                    cells.forEach((cell, cellIndex) => {
+                        // Skip time column (first cell) and colspan cells (short break, lunch break)
+                        if (cellIndex > 0 && !cell.hasAttribute('colspan')) {
+                            if (timetableData[rowIndex] && timetableData[rowIndex][cellIndex]) {
+                                cell.textContent = timetableData[rowIndex][cellIndex];
+                            }
+                        }
+                    });
+                });
+            }
+        };
+
+        // Save timetable to local storage
+        const saveTimetable = () => {
+            const timetableData = [];
+            const rows = teacherTimetableBody.querySelectorAll('tr');
+            rows.forEach(row => {
+                const rowData = [];
+                const cells = row.querySelectorAll('td');
+                cells.forEach((cell, cellIndex) => {
+                    // Skip time column (first cell) and colspan cells
+                    if (cellIndex > 0 && !cell.hasAttribute('colspan')) {
+                        rowData.push(cell.textContent.trim());
+                    } else if (cellIndex === 0) { // Keep time column in data structure
+                        rowData.push(cell.textContent.trim());
+                    } else if (cell.hasAttribute('colspan')) { // Handle colspan cells
+                        rowData.push(cell.textContent.trim());
+                    }
+                });
+                timetableData.push(rowData);
+            });
+            localStorage.setItem('teacherTimetable', JSON.stringify(timetableData));
+        };
+
+        // Initial load for teacher timetable
+        loadTeacherTimetable();
+
+        editTimetableBtn.addEventListener('click', () => {
+            isEditing = !isEditing;
+            if (isEditing) {
+                editTimetableBtn.textContent = 'Save Timetable';
+                teacherTimetableBody.querySelectorAll('td').forEach(cell => {
+                    // Only make editable if it's not the first column (time) and not a colspan cell
+                    if (!cell.classList.contains('short-break') && !cell.classList.contains('lunch-break') && cell.cellIndex > 0) {
+                        cell.contentEditable = true;
+                        cell.classList.add('editable');
+                    }
+                });
+            } else {
+                editTimetableBtn.textContent = 'Edit Timetable';
+                teacherTimetableBody.querySelectorAll('td').forEach(cell => {
+                    cell.contentEditable = false;
+                    cell.classList.remove('editable');
+                });
+                saveTimetable();
+            }
+        });
+    }
+
+    // Student Timetable Load functionality for main.html
+    const studentTimetableBody = document.querySelector('body.dashboard-layout .main-content .content table tbody');
+
+    if (studentTimetableBody && currentPage === 'main.html') {
+        const loadStudentTimetable = () => {
+            const savedTimetable = localStorage.getItem('teacherTimetable');
+            if (savedTimetable) {
+                const timetableData = JSON.parse(savedTimetable);
+                const rows = studentTimetableBody.querySelectorAll('tr');
+                rows.forEach((row, rowIndex) => {
+                    const cells = row.querySelectorAll('td');
+                    cells.forEach((cell, cellIndex) => {
+                        // Skip time column (first cell) and colspan cells (short break, lunch break)
+                        if (cellIndex > 0 && !cell.hasAttribute('colspan')) {
+                            if (timetableData[rowIndex] && timetableData[rowIndex][cellIndex]) {
+                                cell.textContent = timetableData[rowIndex][cellIndex];
+                            }
+                        }
+                    });
+                });
+            }
+        };
+        loadStudentTimetable();
     }
 });
