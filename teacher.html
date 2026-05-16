@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher Dashboard - Smart Attendance Tracker</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="dashboard-layout">
+        <div class="sidebar">
+            <h2>Dashboard</h2>
+            <ul>
+                <li><a href="teacher.html" class="active">Dashboard</a></li>
+                <li><a href="view-student-attendance.html">View Student Attendance</a></li>
+                <li><a href="manage-students.html">Manage Students</a></li>
+                <li><a href="generate-teacher-reports.html">Generate Reports</a></li>
+                <li><a href="generate-qr.html">Generate QR Code</a></li>
+            </ul>
+        </div>
+        <div class="main-content">
+            <header>
+                <div class="menu-toggle">
+                    <div class="hamburger"></div>
+                </div>
+                <nav class="nav-links">
+                    <a href="about.html">About</a>
+                    <a href="contact.html">Contact</a>
+                    <a href="help.html">Help</a>
+                    <a href="index.html">Logout</a>
+                </nav>
+            </header>
+            <div class="content">
+                <h1 id="welcomeText">Welcome!</h1>
+                <div class="card">
+                    <!-- Added: responsive hooks for the timetable toolbar -->
+                    <div class="timetable-toolbar">
+                        <h2>Weekly Timetable</h2>
+                        <div class="timetable-actions">
+                            <button id="edit-timetable-btn" class="btn" style="width: auto; padding: 8px 16px;">Edit Timetable</button>
+                            <button onclick="saveTimetable()" class="btn" style="width: auto;">Save Timetable</button>
+                        </div>
+                    </div>
+                    <table class="timetable-center">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Monday</th>
+                                <th>Tuesday</th>
+                                <th>Wednesday</th>
+                                <th>Thursday</th>
+                                <th>Friday</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>09:00 - 10:00</td>
+                                <td><input type="text" data-timetable-field="monday_0900" disabled></td>
+                                <td><input type="text" data-timetable-field="tuesday_0900" disabled></td>
+                                <td><input type="text" data-timetable-field="wednesday_0900" disabled></td>
+                                <td><input type="text" data-timetable-field="thursday_0900" disabled></td>
+                                <td><input type="text" data-timetable-field="friday_0900" disabled></td>
+                            </tr>
+                            <tr>
+                                <td>10:00 - 11:00</td>
+                                <td><input type="text" data-timetable-field="monday_1000" disabled></td>
+                                <td><input type="text" data-timetable-field="tuesday_1000" disabled></td>
+                                <td><input type="text" data-timetable-field="wednesday_1000" disabled></td>
+                                <td><input type="text" data-timetable-field="thursday_1000" disabled></td>
+                                <td><input type="text" data-timetable-field="friday_1000" disabled></td>
+                            </tr>
+                            <tr>
+                                <td>11:00 - 11:15</td>
+                                <td colspan="5" class="short-break">Short Break</td>
+                            </tr>
+                            <tr>
+                                <td>11:15 - 12:15</td>
+                                <td><input type="text" data-timetable-field="monday_1115" disabled></td>
+                                <td><input type="text" data-timetable-field="tuesday_1115" disabled></td>
+                                <td><input type="text" data-timetable-field="wednesday_1115" disabled></td>
+                                <td><input type="text" data-timetable-field="thursday_1115" disabled></td>
+                                <td><input type="text" data-timetable-field="friday_1115" disabled></td>
+                            </tr>
+                            <tr>
+                                <td>12:15 - 01:15</td>
+                                <td><input type="text" data-timetable-field="monday_1215" disabled></td>
+                                <td><input type="text" data-timetable-field="tuesday_1215" disabled></td>
+                                <td><input type="text" data-timetable-field="wednesday_1215" disabled></td>
+                                <td><input type="text" data-timetable-field="thursday_1215" disabled></td>
+                                <td><input type="text" data-timetable-field="friday_1215" disabled></td>
+                            </tr>
+                            <tr>
+                                <td>01:15 - 02:00</td>
+                                <td colspan="5" class="lunch-break">Lunch Break</td>
+                            </tr>
+                            <tr>
+                                <td>02:00 - 03:00</td>
+                                <td><input type="text" data-timetable-field="monday_1400" disabled></td>
+                                <td><input type="text" data-timetable-field="tuesday_1400" disabled></td>
+                                <td><input type="text" data-timetable-field="wednesday_1400" disabled></td>
+                                <td><input type="text" data-timetable-field="thursday_1400" disabled></td>
+                                <td><input type="text" data-timetable-field="friday_1400" disabled></td>
+                            </tr>
+                            <tr>
+                                <td>03:00 - 04:00</td>
+                                <td><input type="text" data-timetable-field="monday_1500" disabled></td>
+                                <td><input type="text" data-timetable-field="tuesday_1500" disabled></td>
+                                <td><input type="text" data-timetable-field="wednesday_1500" disabled></td>
+                                <td><input type="text" data-timetable-field="thursday_1500" disabled></td>
+                                <td><input type="text" data-timetable-field="friday_1500" disabled></td>
+                            </tr>
+                            <tr>
+                                <td>04:00 - 05:00</td>
+                                <td><input type="text" data-timetable-field="monday_1600" disabled></td>
+                                <td><input type="text" data-timetable-field="tuesday_1600" disabled></td>
+                                <td><input type="text" data-timetable-field="wednesday_1600" disabled></td>
+                                <td><input type="text" data-timetable-field="thursday_1600" disabled></td>
+                                <td><input type="text" data-timetable-field="friday_1600" disabled></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script type="module">
+            import { getAuth, onAuthStateChanged } 
+            from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+            import { doc, getDoc, setDoc } 
+            from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+            import { db } from "./js/firebase.js";
+
+            const auth = getAuth();
+
+            //  AUTH + ROLE CHECK + NAME
+            onAuthStateChanged(auth, async (user) => {
+
+                if (!user) {
+                    alert("Please login first ");
+                    window.location.href = "login.html";
+                    return;
+                }
+
+                const docRef = doc(db, "users", user.uid);
+                const docSnap = await getDoc(docRef);
+
+                if (!docSnap.exists()) {
+                    alert("User not found ");
+                    window.location.href = "login.html";
+                    return;
+                }
+
+                const userData = docSnap.data();
+
+
+                // BLOCK NON-TEACHER
+                if (userData.role !== "teacher") {
+                    alert("Access denied ");
+                    window.location.href = "main.html";
+                    return;
+                }
+
+                //  SET NAME
+                document.getElementById("welcomeText").innerText =
+                    "Welcome, " + userData.name + "!";
+
+                //  LOAD TIMETABLE
+                loadTimetable();
+            });
+
+
+            // SAVE TIMETABLE
+            window.saveTimetable = async function () {
+
+                const timetableData = {};
+                document.querySelectorAll("[data-timetable-field]").forEach(input => {
+                    timetableData[input.dataset.timetableField] = input.value.trim();
+                });
+
+                try {
+                    await setDoc(doc(db, "timetable", "week1"), timetableData);
+
+                    alert("Timetable saved ");
+
+                    // 🔒 LOCK INPUTS
+                    document.querySelectorAll("[data-timetable-field]").forEach(input => {
+                        input.disabled = true;
+                    });
+
+                } catch (error) {
+                    console.error("Error saving timetable:", error);
+
+                    if (error.code === "permission-denied") {
+                        alert("Error saving: Firestore rules do not allow this teacher account to write timetable records.");
+                        return;
+                    }
+
+                    alert(`Error saving: ${error.message}`);
+                }
+            };
+
+            //  LOAD FUNCTION
+            async function loadTimetable() {
+
+                const docRef = doc(db, "timetable", "week1");
+                const docSnap = await getDoc(docRef);
+
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+
+                    document.querySelectorAll("[data-timetable-field]").forEach(input => {
+                        input.value = data[input.dataset.timetableField] || "";
+                    });
+                }
+            }
+
+            // ✏️ EDIT BUTTON
+            document.getElementById("edit-timetable-btn").onclick = function () {
+                document.querySelectorAll("[data-timetable-field]").forEach(input => {
+                    input.disabled = false;
+                });
+            };
+     </script>
+    
+
+    <script src="js/main.js"></script>
+
+</body>
+</html>

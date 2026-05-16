@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Student Attendance - Smart Attendance Tracker</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+<div class="dashboard-layout">
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+        <h2>Dashboard</h2>
+        <ul>
+            <li><a href="teacher.html">Dashboard</a></li>
+            <li><a href="view-student-attendance.html" class="active">View Student Attendance</a></li>
+            <li><a href="manage-students.html">Manage Students</a></li>
+            <li><a href="generate-teacher-reports.html">Generate Reports</a></li>
+            <li><a href="generate-qr.html">Generate QR Code</a></li>
+        </ul>
+    </div>
+
+    <!-- MAIN -->
+    <div class="main-content">
+        <header>
+            <!-- Added: mobile sidebar toggle -->
+            <div class="menu-toggle">
+                <div class="hamburger"></div>
+            </div>
+            <nav class="nav-links">
+                <a href="about.html">About</a>
+                <a href="contact.html">Contact</a>
+                <a href="help.html">Help</a>
+                <a href="index.html">Logout</a>
+            </nav>
+        </header>
+
+        <div class="content">
+
+            <h1>Student Attendance Report</h1>
+
+            <!-- FILTER SECTION -->
+            <div class="card attendance-filters">
+                
+                <select id="filter-department">
+                    <option value="">All Departments</option>
+                    <option value="Computer Science">Computer Science</option>
+                    <option value="IT">IT</option>
+                    <option value="EXTC">EXTC</option>
+                </select>
+
+                <input type="date" id="filter-date">
+
+                <button onclick="loadAttendance()" class="btn">Apply Filter</button>
+            </div>
+
+            <!-- SUMMARY -->
+            <div class="card attendance-summary">
+                <h3>Total Records: <span id="total-count">0</span></h3>
+                <h3>Present Today: <span id="today-count">0</span></h3>
+            </div>
+
+            <!-- TABLE -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>All Attendance Records</h2>
+                    <button type="button" id="delete-all-attendance-btn" class="remove-btn">Delete All Records</button>
+                </div>
+
+                <table border="1" width="100%" style="margin-top: 20px;">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Department</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="attendance-table-body"></tbody>
+                </table>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- SCRIPT -->
+<script type="module">
+import { db } from "./js/firebase.js";
+import { collection, deleteDoc, doc, getDocs, writeBatch } 
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const tableBody = document.getElementById("attendance-table-body");
+const totalCountEl = document.getElementById("total-count");
+const todayCountEl = document.getElementById("today-count");
+const deleteAllAttendanceButton = document.getElementById("delete-all-attendance-btn");
+let currentAttendanceIds = [];
+
+if (deleteAllAttendanceButton) {
+    deleteAllAttendanceButton.addEventListener("click", removeAllAttendanceRecords);
+}
+
+window.loadAttendance = async function () {
+
+    const attendanceSnap = await getDocs(collection(db, "attendance"));
+    const usersSnap = await getDocs(collection(db, "users"));
+
+    const userMap = {};
+
+    usersSnap.forEach(doc => {
+        const data = doc.data();
+        userMap[data.email] = data;
+    });
+
+    const selectedDept = document.getElementById("filter-department").value;
+    const selectedDate = document.getElementById("filter-date").value;
+
+    let rows = [];
+    let uniqueToday = new Set();   // 🔥 to remove duplicates today
+    let uniqueAll = new Set();     // 🔥 for total unique records
+
+    const todayStr = new Date().toISOString().split("T")[0];
+
+    attendanceSnap.forEach(docSnap => {
+
+        const data = docSnap.data();
+        const user = userMap[data.studentEmail] || {};
+
+        const name = user.name || "Unknown";
+        const department = user.department || "-";
+
+        const dateObj = data.timestamp 
+            ? new Date(data.timestamp.seconds * 1000)
+            : null;
+
+        if (!dateObj) return;
+
+        const recordDate = dateObj.toISOString().split("T")[0];
+        const formattedDate = dateObj.toLocaleString();
+        const status = data.status || "present";
+
+        // 🔥 FILTERS
+        if (selectedDept && department !== selectedDept) return;
+        if (selectedDate && recordDate !== selectedDate) return;
+
+        // 🔥 UNIQUE KEY (student + date)
+        const uniqueKey = data.studentEmail + "_" + recordDate;
+
+        if (uniqueAll.has(uniqueKey)) return; // skip duplicate
+        uniqueAll.add(uniqueKey);
+
+        // COUNT TODAY UNIQUE
+        if (recordDate === todayStr) {
+            uniqueToday.add(data.studentEmail);
+        }
+
+        rows.push({
+            id: docSnap.id,
+            name,
+            email: data.studentEmail,
+            department,
+            date: dateObj,
+            formattedDate,
+            status
+        });
+    });
+
+    // SORT latest first
+    rows.sort((a, b) => b.date - a.date);
+    currentAttendanceIds = rows.map(r => r.id);
+    setDeleteAllAttendanceButtonState();
+
+    // RENDER
+    tableBody.innerHTML = "";
+
+    rows.forEach(r => {
+        const row = document.createElement("tr");
+
+        [
+            r.name,
+            r.email,
+            r.department,
+            r.formattedDate,
+            r.status
+        ].forEach(value => {
+            const cell = document.createElement("td");
+            cell.textContent = value || "N/A";
+            row.appendChild(cell);
+        });
+
+        const actionCell = document.createElement("td");
+        const removeButton = document.createElement("button");
+        removeButton.type = "button";
+        removeButton.className = "remove-btn";
+        removeButton.textContent = "Remove";
+        removeButton.addEventListener("click", () => removeAttendance(r.id));
+        actionCell.appendChild(removeButton);
+        row.appendChild(actionCell);
+
+        tableBody.appendChild(row);
+    });
+
+    // UPDATE COUNTS
+    totalCountEl.innerText = rows.length;
+    todayCountEl.innerText = uniqueToday.size;
+};
+
+async function removeAttendance(id) {
+    if (!id) {
+        alert("Unable to remove this attendance record because its database id was not found.");
+        return;
+    }
+
+    if (!confirm("Are you sure you want to remove this attendance record?")) {
+        return;
+    }
+
+    try {
+        await deleteDoc(doc(db, "attendance", id));
+        alert("Attendance record removed successfully.");
+        await loadAttendance();
+    } catch (error) {
+        console.error("Error removing attendance record:", error);
+
+        if (error.code === "permission-denied") {
+            alert("Unable to remove attendance record: Firestore rules do not allow this account to delete attendance records.");
+            return;
+        }
+
+        alert(`Error removing attendance record: ${error.message}`);
+    }
+}
+
+async function removeAllAttendanceRecords() {
+    const ids = [...new Set(currentAttendanceIds)];
+
+    if (!ids.length) {
+        alert("There are no attendance records to delete.");
+        return;
+    }
+
+    if (!confirm(`Are you sure you want to delete all ${ids.length} attendance records shown here?`)) {
+        return;
+    }
+
+    try {
+        await deleteAttendanceRecords(ids);
+        alert("All attendance records were removed successfully.");
+        await loadAttendance();
+    } catch (error) {
+        console.error("Error removing all attendance records:", error);
+
+        if (error.code === "permission-denied") {
+            alert("Unable to remove attendance records: Firestore rules do not allow this account to delete attendance records.");
+            return;
+        }
+
+        alert(`Error removing attendance records: ${error.message}`);
+    }
+}
+
+async function deleteAttendanceRecords(ids) {
+    for (let index = 0; index < ids.length; index += 500) {
+        const batch = writeBatch(db);
+        ids.slice(index, index + 500).forEach(id => {
+            batch.delete(doc(db, "attendance", id));
+        });
+        await batch.commit();
+    }
+}
+
+function setDeleteAllAttendanceButtonState() {
+    if (deleteAllAttendanceButton) {
+        deleteAllAttendanceButton.disabled = currentAttendanceIds.length === 0;
+    }
+}
+
+// AUTO LOAD
+loadAttendance();
+</script>
+
+<script src="js/main.js"></script>
+
+</body>
+</html>

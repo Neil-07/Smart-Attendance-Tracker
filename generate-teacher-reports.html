@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generate Reports - Smart Attendance Tracker</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+<div class="dashboard-layout">
+
+    <div class="sidebar">
+        <h2>Dashboard</h2>
+        <ul>
+            <li><a href="teacher.html">Dashboard</a></li>
+            <li><a href="view-student-attendance.html">View Student Attendance</a></li>
+            <li><a href="manage-students.html">Manage Students</a></li>
+            <li><a href="generate-teacher-reports.html" class="active">Generate Reports</a></li>
+            <li><a href="generate-qr.html">Generate QR Code</a></li>
+        </ul>
+    </div>
+
+    <div class="main-content">
+        <header>
+            <!-- Added: mobile sidebar toggle -->
+            <div class="menu-toggle">
+                <div class="hamburger"></div>
+            </div>
+            <nav class="nav-links">
+                <a href="about.html">About</a>
+                <a href="contact.html">Contact</a>
+                <a href="help.html">Help</a>
+                <a href="index.html">Logout</a>
+            </nav>
+        </header>
+
+        <div class="content">
+
+            <h1>Generate Attendance Reports</h1>
+
+            <!-- FILTER -->
+            <div class="card">
+                <h2>Report Filters</h2>
+
+                <div class="input-group">
+                    <label>Department</label>
+                    <select id="department">
+                        <option value="">All</option>
+                        <option value="Computer Science">Computer Science</option>
+                        <option value="IT">IT</option>
+                        <option value="EXTC">EXTC</option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <label>From Date</label>
+                    <input type="date" id="from-date">
+                </div>
+
+                <div class="input-group">
+                    <label>To Date</label>
+                    <input type="date" id="to-date">
+                </div>
+
+                <button id="generate-btn" type="button" class="btn">Generate Report</button>
+                <button id="export-btn" type="button" class="btn">Export CSV</button>
+            </div>
+
+            <!-- SUMMARY -->
+            <div class="card" id="summary" style="display:none;">
+                <h3>Total Records: <span id="total"></span></h3>
+                <h3>Unique Students: <span id="unique"></span></h3>
+                <h3>Attendance %: <span id="percent"></span></h3>
+            </div>
+
+            <!-- TABLE -->
+            <div class="card" id="report-container" style="display:none;">
+                <h2>Report</h2>
+
+                <table border="1" width="100%">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Department</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="report-table"></tbody>
+                </table>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script type="module">
+        import { db } from "./js/firebase.js";
+        import { collection, getDocs } 
+        from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+        let reportData = [];
+
+        async function generateReport() {
+
+            const dept = document.getElementById("department").value;
+            const fromDate = document.getElementById("from-date").value;
+            const toDate = document.getElementById("to-date").value;
+
+            const attendanceSnap = await getDocs(collection(db, "attendance"));
+            const usersSnap = await getDocs(collection(db, "users"));
+
+            const userMap = {};
+            usersSnap.forEach(doc => {
+                const data = doc.data();
+                userMap[data.email] = data;
+            });
+
+            const table = document.getElementById("report-table");
+            table.innerHTML = "";
+
+            reportData = [];
+            let uniqueStudentsSet = new Set();
+
+            attendanceSnap.forEach(docSnap => {
+
+                const data = docSnap.data();
+                if (!data.timestamp) return;
+
+                const user = userMap[data.studentEmail] || {};
+
+                const name = user.name || "Unknown";
+                const department = user.department || "-";
+
+                const dateObj = new Date(data.timestamp.seconds * 1000);
+                const dateStr = dateObj.toISOString().split("T")[0];
+
+                // FILTERS
+                if (dept && department !== dept) return;
+                if (fromDate && dateStr < fromDate) return;
+                if (toDate && dateStr > toDate) return;
+
+                uniqueStudentsSet.add(data.studentEmail);
+
+                const rowData = {
+                    name,
+                    email: data.studentEmail,
+                    department,
+                    date: dateObj.toLocaleString(),
+                    status: data.status || "present"
+                };
+
+                reportData.push(rowData);
+
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>${rowData.name}</td>
+                    <td>${rowData.email}</td>
+                    <td>${rowData.department}</td>
+                    <td>${rowData.date}</td>
+                    <td>${rowData.status}</td>
+                `;
+                table.appendChild(row);
+            });
+
+            if (reportData.length === 0) {
+                alert("No data found");
+                return;
+            }
+
+            // CORRECT SUMMARY
+            const total = reportData.length;
+            const uniqueStudents = uniqueStudentsSet.size;
+
+            // percentage = attendance entries per student (basic metric)
+            const percent = ((total / (uniqueStudents || 1)) ).toFixed(2);
+
+            document.getElementById("total").innerText = total;
+            document.getElementById("unique").innerText = uniqueStudents;
+            document.getElementById("percent").innerText = percent;
+
+            document.getElementById("summary").style.display = "block";
+            document.getElementById("report-container").style.display = "block";
+        }
+
+        // FIXED CSV EXPORT
+        function exportCSV() {
+
+            if (reportData.length === 0) {
+                alert("Generate report first");
+                return;
+            }
+
+            let csv = "Name,Email,Department,Date,Status\n";
+
+            reportData.forEach(r => {
+                const safe = (val) => `"${String(val).replace(/"/g, '""')}"`;
+                csv += `${safe(r.name)},${safe(r.email)},${safe(r.department)},${safe(r.date)},${safe(r.status)}\n`;
+            });
+
+            const blob = new Blob([csv], { type: "text/csv" });
+            const url = URL.createObjectURL(blob);
+
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "attendance_report.csv";
+            a.click();
+        }
+
+        // EVENTS
+        document.getElementById("generate-btn").addEventListener("click", generateReport);
+        document.getElementById("export-btn").addEventListener("click", exportCSV);
+        
+        // <!-- Added: shared responsive menu behavior -->
+
+</script>
+
+<script src="js/main.js"></script>
+
+</body>
+</html>

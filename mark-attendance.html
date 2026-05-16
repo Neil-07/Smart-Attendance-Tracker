@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mark Attendance - Smart Attendance Tracker</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="dashboard-layout">
+        <div class="sidebar">
+            <h2>Dashboard</h2>
+            <ul>
+                <li><a href="student.html">Student Home</a></li>
+                <li><a href="mark-attendance.html" class="active">Mark Attendance</a></li>
+                <li><a href="view-attendance.html">View Attendance</a></li>
+            </ul>
+        </div>
+
+        <div class="main-content">
+            <header>
+                <div class="menu-toggle">
+                    <div class="hamburger"></div>
+                </div>
+                <nav class="nav-links">
+                    <a href="about.html">About</a>
+                    <a href="contact.html">Contact</a>
+                    <a href="help.html">Help</a>
+                    <a href="index.html">Logout</a>
+                </nav>
+            </header>
+
+            <div class="content">
+                <h1>Mark Attendance</h1>
+
+                <div class="card">
+                    <h2>Scan Teacher QR</h2>
+                    <p>Open the device camera and scan the teacher's QR code to continue to attendance verification.</p>
+                    <div class="scanner-actions">
+                        <button type="button" id="start-attendance-scan" class="btn">Open Camera</button>
+                        <button type="button" id="stop-attendance-scan" class="btn btn-secondary" hidden>Stop Camera</button>
+                    </div>
+                    <div id="attendance-scanner-shell" class="scanner-shell" aria-live="polite">
+                        <div id="attendance-reader" class="scanner-reader"></div>
+                    </div>
+                    <p id="attendance-scan-status" class="scanner-status">Ready to scan the teacher QR code.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        import { db } from "./js/firebase.js";
+
+        const auth = getAuth();
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                window.location.href = "login.html";
+                return;
+            }
+
+            const userRef = doc(db, "users", user.uid);
+            const userSnap = await getDoc(userRef);
+
+            if (!userSnap.exists()) {
+                alert("User data not found");
+                window.location.href = "login.html";
+                return;
+            }
+
+            const userData = userSnap.data();
+
+            if (userData.role !== "student") {
+                alert("Access denied");
+                window.location.href = "login.html";
+            }
+        });
+    </script>
+    <!-- Added: QR scanner library and scanner logic for the dedicated page -->
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <script src="js/student-scanner.js"></script>
+    <!-- Added: shared responsive menu behavior -->
+    <script src="js/main.js"></script>
+</body>
+</html>

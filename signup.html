@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - Smart Attendance Tracker</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="form-container">
+    <h1>Create Your Account</h1>
+    <h2>Join the platform</h2>
+
+    <form id="signup-form">
+
+        <!-- ROLE -->
+        <div class="input-group">
+            <label for="role">You are a:</label>
+            <select id="role" required>
+                <option value="" disabled selected>Select your role</option>
+                <option value="student">Student</option>
+                <option value="teacher">Teacher</option>
+                <option value="admin">Admin</option>
+            </select>
+        </div>
+
+        <!-- ✅ FIXED: DEPARTMENT ADDED -->
+        <div class="input-group">
+            <label for="department">Department</label>
+            <select id="department" required>
+                <option value="">Select Department</option>
+                <option value="Computer Science">Computer Science</option>
+                <option value="IT">IT</option>
+                <option value="EXTC">EXTC</option>
+                <option value="Mechanical">Mechanical</option>
+            </select>
+        </div>
+
+        <!-- NAME -->
+        <div class="input-group">
+            <label for="fullname">Full Name</label>
+            <input type="text" id="fullname" required>
+        </div>
+
+        <!-- EMAIL -->
+        <div class="input-group">
+            <label>Email</label>
+            <input type="email" id="signup-email" required>
+        </div>
+
+        <!-- PASSWORD -->
+        <div class="input-group">
+            <label>Password</label>
+            <input type="password" id="signup-password" required>
+        </div>
+
+        <!-- CONFIRM PASSWORD -->
+        <div class="input-group">
+            <label>Confirm Password</label>
+            <input type="password" id="confirm-password" required>
+        </div>
+
+        <!-- BUTTON -->
+        <button type="button" onclick="signup()" class="btn">Sign Up</button>
+
+    </form>
+
+    <p style="margin-top: 20px;">
+        Already have an account? <a href="login.html">Login</a>
+    </p>
+</div>
+
+<script type="module" src="js/auth.js"></script>
+
+</body>
+</html>
