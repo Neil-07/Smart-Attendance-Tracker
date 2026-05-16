@@ -13,6 +13,7 @@ import {
     getDocs,
     query,
     setDoc,
+    updateDoc,
     where,
     writeBatch
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -22,6 +23,8 @@ const defaultPassword = "default123";
 const secondaryApp = initializeApp(firebaseConfig, "adminUserCreator");
 const secondaryAuth = getAuth(secondaryApp);
 let currentAttendanceIds = [];
+let currentStudentDepartmentFilter = "";
+let showAdminPanel = () => {};
 
 document.addEventListener("DOMContentLoaded", () => {
     initializeAdminTabs();
@@ -34,7 +37,7 @@ function initializeAdminTabs() {
     const tabLinks = document.querySelectorAll("[data-admin-tab]");
     const panels = document.querySelectorAll("[data-admin-panel]");
 
-    const showPanel = (panelId) => {
+    showAdminPanel = (panelId) => {
         panels.forEach((panel) => {
             panel.hidden = panel.dataset.adminPanel !== panelId;
         });
@@ -51,13 +54,17 @@ function initializeAdminTabs() {
             event.preventDefault();
             event.stopImmediatePropagation();
             const panelId = link.dataset.adminTab;
+            if (panelId === "manage-students") {
+                currentStudentDepartmentFilter = "";
+                loadStudents();
+            }
             window.history.replaceState(null, "", `#${panelId}`);
-            showPanel(panelId);
+            showAdminPanel(panelId);
         });
     });
 
     const initialPanel = window.location.hash.replace("#", "") || "dashboard";
-    showPanel(document.getElementById(initialPanel) ? initialPanel : "dashboard");
+    showAdminPanel(document.getElementById(initialPanel) ? initialPanel : "dashboard");
 }
 
 function initializeAdminForms() {
@@ -100,10 +107,42 @@ function initializeAdminForms() {
 
 function initializeAdminActions() {
     const deleteAllAttendanceButton = document.getElementById("delete-all-attendance-btn");
+    const clearStudentFilterButton = document.getElementById("clear-student-filter-btn");
+    const dashboardCards = document.querySelectorAll("[data-dashboard-target]");
 
     if (deleteAllAttendanceButton) {
         deleteAllAttendanceButton.addEventListener("click", removeAllAttendanceRecords);
     }
+
+    if (clearStudentFilterButton) {
+        clearStudentFilterButton.addEventListener("click", async () => {
+            currentStudentDepartmentFilter = "";
+            await loadStudents();
+        });
+    }
+
+    dashboardCards.forEach((card) => {
+        const openTarget = () => openDashboardTarget(card);
+        card.addEventListener("click", openTarget);
+        card.addEventListener("keydown", (event) => {
+            if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                openTarget();
+            }
+        });
+    });
+}
+
+async function openDashboardTarget(card) {
+    const target = card.dataset.dashboardTarget;
+
+    if (target === "manage-students") {
+        currentStudentDepartmentFilter = card.dataset.studentDepartment || "";
+        await loadStudents();
+    }
+
+    window.history.replaceState(null, "", `#${target}`);
+    showAdminPanel(target);
 }
 
 function protectAdminPage() {
@@ -177,8 +216,8 @@ async function loadDashboardStats() {
         const userSnap = await getDocs(collection(db, "users"));
         const studentDepartments = {
             "Computer Science": 0,
-            "Information Technology": 0,
-            Electronics: 0,
+            IT: 0,
+            EXTC: 0,
             Mechanical: 0
         };
         let activeTeachers = 0;
@@ -193,7 +232,7 @@ async function loadDashboardStats() {
 
             if (data.role === "student") {
                 totalStudents += 1;
-                const department = data.class || data.department;
+                const department = normalizeDepartment(data.class || data.department);
 
                 if (Object.prototype.hasOwnProperty.call(studentDepartments, department)) {
                     studentDepartments[department] += 1;
@@ -204,12 +243,34 @@ async function loadDashboardStats() {
         setCount("active-teacher-count", activeTeachers);
         setCount("total-student-count", totalStudents);
         setCount("computer-science-student-count", studentDepartments["Computer Science"]);
-        setCount("information-technology-student-count", studentDepartments["Information Technology"]);
-        setCount("electronics-student-count", studentDepartments.Electronics);
+        setCount("information-technology-student-count", studentDepartments.IT);
+        setCount("electronics-student-count", studentDepartments.EXTC);
         setCount("mechanical-student-count", studentDepartments.Mechanical);
     } catch (error) {
         console.error("Error loading dashboard stats:", error);
     }
+}
+
+function normalizeDepartment(value) {
+    const department = (value || "").trim().toLowerCase();
+
+    if (department === "information technology" || department === "it") {
+        return "IT";
+    }
+
+    if (department === "electronics" || department === "extc" || department === "electronics (extc)") {
+        return "EXTC";
+    }
+
+    if (department === "computer science") {
+        return "Computer Science";
+    }
+
+    if (department === "mechanical") {
+        return "Mechanical";
+    }
+
+    return value || "";
 }
 
 async function loadTeachers() {
@@ -223,7 +284,7 @@ async function loadTeachers() {
         data.email,
         data.department,
         data.subjects || "Not assigned",
-        createRemoveButton("removeTeacher", id)
+        createTeacherActions(id, data.subjects)
     ]);
 }
 
@@ -232,13 +293,44 @@ async function loadStudents() {
     if (!tableBody) return;
 
     const students = await getUsersByRole("student");
-    setCount("student-count", students.length);
-    renderRows(tableBody, students, (id, data) => [
+    const visibleStudents = currentStudentDepartmentFilter
+        ? students.filter(({ data }) => normalizeDepartment(data.class || data.department) === currentStudentDepartmentFilter)
+        : students;
+
+    setStudentListTitle();
+    setCount("student-count", visibleStudents.length);
+    renderRows(tableBody, visibleStudents, (id, data) => [
         data.name,
         data.email,
         data.class || data.department || "Not assigned",
         createRemoveButton("removeStudent", id)
     ]);
+}
+
+function setStudentListTitle() {
+    const title = document.getElementById("student-list-title");
+    const clearButton = document.getElementById("clear-student-filter-btn");
+
+    if (title) {
+        title.textContent = currentStudentDepartmentFilter
+            ? `${getDepartmentLabel(currentStudentDepartmentFilter)} Students`
+            : "Student List";
+    }
+
+    if (clearButton) {
+        clearButton.hidden = !currentStudentDepartmentFilter;
+    }
+}
+
+function getDepartmentLabel(department) {
+    const labels = {
+        "Computer Science": "Computer Science",
+        IT: "IT",
+        EXTC: "Electronics (EXTC)",
+        Mechanical: "Mechanical"
+    };
+
+    return labels[department] || department;
 }
 
 async function loadAttendance() {
@@ -347,6 +439,25 @@ function createRemoveButton(handlerName, id) {
     return button;
 }
 
+function createTeacherActions(id, subjects) {
+    const actions = document.createElement("div");
+    actions.className = "table-actions";
+    actions.append(
+        createAssignSubjectsButton(id, subjects),
+        createRemoveButton("removeTeacher", id)
+    );
+    return actions;
+}
+
+function createAssignSubjectsButton(id, subjects) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "btn btn-small";
+    button.textContent = "Assign Subjects";
+    button.addEventListener("click", () => assignTeacherSubjects(id, subjects || ""));
+    return button;
+}
+
 window.removeTeacher = async function (id) {
     await removeUser(id, "teacher", loadTeachers);
 };
@@ -354,6 +465,34 @@ window.removeTeacher = async function (id) {
 window.removeStudent = async function (id) {
     await removeUser(id, "student", loadStudents);
 };
+
+async function assignTeacherSubjects(id, currentSubjects) {
+    const subjects = prompt(
+        "Enter subjects for this teacher. Separate multiple subjects with commas.",
+        currentSubjects
+    );
+
+    if (subjects === null) {
+        return;
+    }
+
+    try {
+        await updateDoc(doc(db, "users", id), {
+            subjects: subjects.trim()
+        });
+        alert("Subjects assigned successfully.");
+        await loadTeachers();
+    } catch (error) {
+        console.error("Error assigning subjects:", error);
+
+        if (error.code === "permission-denied") {
+            alert("Unable to assign subjects: Firestore rules do not allow this admin account to update teacher records.");
+            return;
+        }
+
+        alert(`Error assigning subjects: ${error.message}`);
+    }
+}
 
 window.removeAttendance = async function (id) {
     if (!id) {

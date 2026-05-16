@@ -13,6 +13,9 @@
 
     startButton.addEventListener("click", startScanner);
     stopButton.addEventListener("click", () => stopScanner(true));
+    scannerShell.addEventListener("click", (event) => {
+        if (event.target === scannerShell) stopScanner(true);
+    });
 
     function setStatus(msg) {
         statusText.textContent = msg;
@@ -52,9 +55,12 @@
         try {
             const scanner = getScanner();
 
+            const readerWidth = document.getElementById(readerId).clientWidth;
+            const qrboxSize = Math.min(250, Math.max(160, readerWidth - 32));
+
             await scanner.start(
                 { facingMode: "environment" },
-                { fps: 10, qrbox: 250 },
+                { fps: 10, qrbox: qrboxSize },
                 async (decodedText) => {
 
                     const sessionId = extractSession(decodedText);
@@ -84,7 +90,7 @@
             console.error(err);
             setStatus("Camera error");
             startButton.disabled = false;
-            stopButton.hidden = true;
+            stopButton.hidden = false;
         }
     }
 

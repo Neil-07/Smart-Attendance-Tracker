@@ -253,6 +253,7 @@ input[type="submit"]:hover {
 .remove-btn {
     background: rgba(248, 113, 113, 0.16);
     color: #991B1B;
+    border-radius: 999px;
     box-shadow: none;
 }
 
@@ -440,8 +441,13 @@ header .container {
 }
 
 .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
     width: var(--sidebar-width);
     min-width: var(--sidebar-width);
+    height: 100vh;
+    overflow-y: auto;
     background: var(--bg-sidebar);
     color: var(--text-dark);
     padding: 16px;
@@ -488,6 +494,28 @@ header .container {
     color: #FFFFFF;
 }
 
+.sidebar-attendance {
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.sidebar-attendance h3 {
+    margin-bottom: 12px;
+    color: var(--text-dark);
+    font-size: 1rem;
+}
+
+.sidebar-attendance .btn {
+    width: 100%;
+    margin-top: 10px;
+}
+
+.sidebar-attendance .btn-secondary {
+    border-color: rgba(255, 255, 255, 0.18);
+    color: var(--text-dark);
+}
+
 .sidebar .sidebar-secondary-nav {
     margin-top: auto;
     padding-top: 20px;
@@ -496,6 +524,7 @@ header .container {
 
 .main-content {
     flex: 1;
+    margin-left: var(--sidebar-width);
     padding: 32px;
     background: transparent;
 }
@@ -864,6 +893,42 @@ footer ul li a {
     margin-bottom: 0;
 }
 
+.scanner-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1100;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgba(15, 23, 42, 0.72);
+}
+
+.scanner-modal.active {
+    display: flex;
+}
+
+.scanner-modal-card {
+    width: min(520px, 100%);
+    max-height: calc(100vh - 48px);
+    overflow-y: auto;
+    padding: 24px;
+    border-radius: var(--radius-lg);
+    background: var(--bg-elevated);
+    box-shadow: var(--shadow-soft);
+}
+
+.scanner-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 18px;
+}
+
+.scanner-modal-header h2 {
+    margin-bottom: 0;
+}
+
 /* 12. Responsive */
 @media (min-width: 600px) {
     .cta-buttons {
@@ -1039,6 +1104,7 @@ footer ul li a {
 
     .dashboard-layout .main-content {
         width: 100%;
+        margin-left: 0;
         padding: 20px;
     }
 

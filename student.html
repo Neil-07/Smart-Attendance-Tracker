@@ -17,6 +17,10 @@
                 <li><a href="student.html" class="active">Student Home</a></li>
                 <li><a href="view-attendance.html">View Attendance</a></li>
             </ul>
+            <div class="sidebar-attendance">
+                <h3>Mark Attendance</h3>
+                <button type="button" id="start-attendance-scan" class="btn">Mark Attendance</button>
+            </div>
         </div>
 
         <div class="main-content">
@@ -64,23 +68,18 @@
                     </div>
                 </div>
 
-                <div class="card">
-                    <h2>Student Options</h2>
-                    <p>Use the options below to access your student tools.</p>
-                    <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-top: 16px;">
-                        <a href="student.html" class="btn" style="width: auto;">Student Home</a>
-                        <a href="view-attendance.html" class="btn" style="width: auto;">View Attendance</a>
-                    </div>
-                    <div style="margin-top: 20px;">
-                        <button type="button" id="start-attendance-scan" class="btn">Mark Attendance</button>
-                        <button type="button" id="stop-attendance-scan" class="btn btn-secondary" hidden>Stop Camera</button>
-                    </div>
-                    <div id="attendance-scanner-shell" class="scanner-shell" aria-live="polite" style="margin-top: 16px;">
-                        <div id="attendance-reader" class="scanner-reader"></div>
-                    </div>
-                    <p id="attendance-scan-status" class="scanner-status" style="margin-top: 16px;">Ready to scan the teacher QR code.</p>
-                </div>
             </div>
+        </div>
+    </div>
+
+    <div id="attendance-scanner-shell" class="scanner-shell scanner-modal" aria-live="polite" aria-modal="true" role="dialog">
+        <div class="scanner-modal-card">
+            <div class="scanner-modal-header">
+                <h2>Mark Attendance</h2>
+                <button type="button" id="stop-attendance-scan" class="btn btn-secondary btn-small" hidden>Stop Camera</button>
+            </div>
+            <div id="attendance-reader" class="scanner-reader"></div>
+            <p id="attendance-scan-status" class="scanner-status">Ready to scan the teacher QR code.</p>
         </div>
     </div>
 
