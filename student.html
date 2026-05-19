@@ -14,22 +14,78 @@
             --student-calendar-blue: #2563EB;
             --student-calendar-blue-light: #DBEAFE;
             --student-calendar-border: #D7E3F8;
-            position: fixed;
-            top: 0;
-            right: 0;
-            z-index: 900;
-            width: var(--student-calendar-width);
-            height: 100vh;
-            overflow-y: auto;
-            padding: 18px;
-            border-left: 1px solid var(--student-calendar-border);
             background: #FFFFFF;
-            box-shadow: -8px 0 28px rgba(37, 99, 235, 0.12);
             color: #0F172A;
         }
-        body.student-calendar-page .main-content {
-            margin-right: 280px;
+
+        @media (min-width: 769px) {
+            .student-calendar-sidebar {
+                position: fixed;
+                top: 0;
+                right: 0;
+                z-index: 900;
+                width: var(--student-calendar-width);
+                height: 100vh;
+                overflow-y: auto;
+                padding: 18px;
+                border-left: 1px solid var(--student-calendar-border);
+                box-shadow: -8px 0 28px rgba(37, 99, 235, 0.12);
+            }
+            body.student-calendar-page .main-content {
+                margin-right: 280px;
+            }
         }
+
+        @media (max-width: 768px) {
+            .student-calendar-sidebar {
+                position: static;
+                width: 100%;
+                height: auto;
+                padding: 20px 0;
+                margin-top: 24px;
+                border-top: 1px solid rgba(255, 255, 255, 0.12);
+                background: transparent;
+                box-shadow: none;
+                color: #FFFFFF;
+            }
+            .student-calendar-sidebar h2,
+            .student-calendar-sidebar h3,
+            .student-calendar-sidebar .student-calendar-month {
+                color: #FFFFFF !important;
+            }
+            .student-calendar-day {
+                color: rgba(255, 255, 255, 0.8) !important;
+            }
+            .student-calendar-day:hover {
+                background: rgba(255, 255, 255, 0.1) !important;
+                color: #FFFFFF !important;
+            }
+            .student-calendar-day.is-outside {
+                color: rgba(255, 255, 255, 0.3) !important;
+            }
+            .student-calendar-day.has-events {
+                background: rgba(37, 99, 235, 0.4) !important;
+                color: #FFFFFF !important;
+            }
+            .student-calendar-event-item {
+                background: rgba(255, 255, 255, 0.05) !important;
+                border-color: rgba(255, 255, 255, 0.1) !important;
+            }
+            .student-event-item {
+                background: rgba(255, 255, 255, 0.05);
+                border-color: rgba(255, 255, 255, 0.1);
+            }
+            .student-event-date {
+                color: #FFFFFF;
+            }
+            .student-event-description {
+                color: rgba(255, 255, 255, 0.7);
+            }
+            .student-empty-events {
+                color: rgba(255, 255, 255, 0.5);
+            }
+        }
+
         .student-calendar-sidebar h2 {
             margin: 0 0 14px;
             color: #0F172A;
@@ -149,6 +205,25 @@
                 <h3>Mark Attendance</h3>
                 <button type="button" id="start-attendance-scan" class="btn">Mark Attendance</button>
             </div>
+
+            <aside class="student-calendar-sidebar" aria-label="Shared calendar events">
+                <h2>Calendar</h2>
+                <div class="student-calendar-month" id="student-calendar-month">Month</div>
+                <div class="student-calendar-weekdays" aria-hidden="true">
+                    <span>Sun</span>
+                    <span>Mon</span>
+                    <span>Tue</span>
+                    <span>Wed</span>
+                    <span>Thu</span>
+                    <span>Fri</span>
+                    <span>Sat</span>
+                </div>
+                <div class="student-calendar-grid" id="student-calendar-grid" aria-label="Current month calendar"></div>
+                <h3 class="student-selected-title" id="student-selected-date-title">Selected Date</h3>
+                <div class="student-event-list" id="student-selected-event-list"></div>
+                <h3 class="student-upcoming-title">Upcoming Events</h3>
+                <div class="student-event-list" id="student-event-list"></div>
+            </aside>
         </div>
 
         <div class="main-content">
@@ -210,25 +285,6 @@
             <p id="attendance-scan-status" class="scanner-status">Ready to scan the teacher QR code.</p>
         </div>
     </div>
-
-    <aside class="student-calendar-sidebar" aria-label="Shared calendar events">
-        <h2>Calendar</h2>
-        <div class="student-calendar-month" id="student-calendar-month">Month</div>
-        <div class="student-calendar-weekdays" aria-hidden="true">
-            <span>Sun</span>
-            <span>Mon</span>
-            <span>Tue</span>
-            <span>Wed</span>
-            <span>Thu</span>
-            <span>Fri</span>
-            <span>Sat</span>
-        </div>
-        <div class="student-calendar-grid" id="student-calendar-grid" aria-label="Current month calendar"></div>
-        <h3 class="student-selected-title" id="student-selected-date-title">Selected Date</h3>
-        <div class="student-event-list" id="student-selected-event-list"></div>
-        <h3 class="student-upcoming-title">Upcoming Events</h3>
-        <div class="student-event-list" id="student-event-list"></div>
-    </aside>
 
     <script type="module">
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
