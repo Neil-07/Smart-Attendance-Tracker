@@ -83,10 +83,9 @@
                 <table border="1" width="100%">
                     <thead>
                         <tr>
-                            <th>Name</th>
-                            <th>Email</th>
-                            <th>Department</th>
-                            <th>Date</th>
+                            <th>Sr No</th>
+                            <th>Student Name</th>
+                            <th>Date & Time</th>
                             <th>Status</th>
                         </tr>
                     </thead>
@@ -148,23 +147,23 @@
                 uniqueStudentsSet.add(data.studentEmail);
 
                 const rowData = {
+                    srNo: reportData.length + 1,
                     name,
-                    email: data.studentEmail,
-                    department,
                     date: dateObj.toLocaleString(),
-                    status: data.status || "present"
+                    status: (data.status || "present").toUpperCase()
                 };
 
                 reportData.push(rowData);
 
                 const row = document.createElement("tr");
+
                 row.innerHTML = `
+                    <td>${rowData.srNo}</td>
                     <td>${rowData.name}</td>
-                    <td>${rowData.email}</td>
-                    <td>${rowData.department}</td>
                     <td>${rowData.date}</td>
                     <td>${rowData.status}</td>
                 `;
+
                 table.appendChild(row);
             });
 
@@ -189,27 +188,59 @@
         }
 
         // FIXED CSV EXPORT
-        function exportCSV() {
+       function exportCSV() {
 
             if (reportData.length === 0) {
                 alert("Generate report first");
                 return;
             }
 
-            let csv = "Name,Email,Department,Date,Status\n";
+            const department =
+                document.getElementById("department").value || "COLLEGE";
 
+            const today = new Date();
+
+            const formattedDate = today.toLocaleDateString();
+            const formattedTime = today.toLocaleTimeString();
+
+            // PROFESSIONAL HEADER
+            let csv =
+        `${department.toUpperCase()} ATTENDANCE SHEET
+
+        Generated On:,${formattedDate}
+        Generated At:,${formattedTime}
+
+        Sr No,Student Name,Date & Time,Status
+        `;
+
+            // TABLE DATA
             reportData.forEach(r => {
-                const safe = (val) => `"${String(val).replace(/"/g, '""')}"`;
-                csv += `${safe(r.name)},${safe(r.email)},${safe(r.department)},${safe(r.date)},${safe(r.status)}\n`;
+
+                const safe = (val) =>
+                    `"${String(val).replace(/"/g, '""')}"`;
+
+                csv +=
+        `${safe(r.srNo)},${safe(r.name)},${safe(r.date)},${safe(r.status)}
+        `;
             });
 
-            const blob = new Blob([csv], { type: "text/csv" });
+            // DOWNLOAD
+            const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+
             const url = URL.createObjectURL(blob);
 
             const a = document.createElement("a");
+
             a.href = url;
-            a.download = "attendance_report.csv";
+
+            a.download =
+        `${department.toLowerCase().replace(/\s+/g, "_")}_attendance_sheet.csv`;
+
+            document.body.appendChild(a);
+
             a.click();
+
+            document.body.removeChild(a);
         }
 
         // EVENTS
