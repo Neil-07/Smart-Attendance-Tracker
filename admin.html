@@ -35,6 +35,106 @@
             gap: 8px;
             flex-wrap: wrap;
         }
+        .admin-calendar-card {
+            --calendar-blue: #2563EB;
+            --calendar-blue-light: #DBEAFE;
+            --calendar-border: #D7E3F8;
+            margin-top: 28px;
+            color: #0F172A;
+        }
+        .admin-calendar-layout {
+            display: grid;
+            grid-template-columns: minmax(320px, 1fr) minmax(280px, 360px);
+            gap: 24px;
+        }
+        .admin-calendar-toolbar,
+        .admin-event-actions {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+        .admin-calendar-toolbar h3,
+        .admin-event-panel h3 {
+            margin: 0;
+        }
+        .admin-calendar-grid,
+        .admin-calendar-weekdays {
+            display: grid;
+            grid-template-columns: repeat(7, minmax(0, 1fr));
+            gap: 8px;
+        }
+        .admin-calendar-weekdays {
+            margin: 20px 0 8px;
+            color: #2563EB;
+            font-size: 0.78rem;
+            font-weight: 700;
+            text-align: center;
+            text-transform: uppercase;
+        }
+        .admin-calendar-day {
+            display: block;
+            text-align: left;
+            min-height: 76px;
+            padding: 8px;
+            border: 1px solid var(--calendar-border);
+            border-radius: 8px;
+            background: #FFFFFF;
+            color: #0F172A;
+            cursor: pointer;
+            box-shadow: none;
+            align-items: flex-start;
+            justify-content: flex-start;
+            font-weight: 700;
+        }
+        .admin-calendar-day:hover,
+        .admin-calendar-day.is-selected {
+            background: var(--calendar-blue-light);
+            border-color: var(--calendar-blue);
+            transform: none;
+        }
+        .admin-calendar-day.is-outside {
+            color: #94A3B8;
+            background: #F8FAFC;
+        }
+        .admin-calendar-day.has-events::after {
+            content: "";
+            display: block;
+            width: 8px;
+            height: 8px;
+            margin-top: 8px;
+            border-radius: 999px;
+            background: var(--calendar-blue);
+        }
+        .admin-event-panel {
+            padding: 20px;
+            border: 1px solid var(--calendar-border);
+            border-radius: 8px;
+            background: #F8FBFF;
+        }
+        .admin-event-list {
+            display: grid;
+            gap: 12px;
+            margin: 18px 0;
+        }
+        .admin-event-item {
+            padding: 12px;
+            border: 1px solid var(--calendar-border);
+            border-radius: 8px;
+            background: #FFFFFF;
+        }
+        .admin-event-item strong {
+            display: block;
+            color: #0F172A;
+        }
+        .admin-event-item p {
+            margin: 6px 0 12px;
+        }
+        @media (max-width: 900px) {
+            .admin-calendar-layout {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 <body>
@@ -87,6 +187,49 @@
                         <div class="stat-card dashboard-link-card" data-dashboard-target="manage-students" data-student-department="Mechanical" role="button" tabindex="0">
                             <span class="stat-label">Mechanical Students</span>
                             <strong id="mechanical-student-count">0</strong>
+                        </div>
+                    </div>
+
+                    <div class="card admin-calendar-card">
+                        <h2>Shared Calendar</h2>
+                        <div class="admin-calendar-layout">
+                            <div>
+                                <div class="admin-calendar-toolbar">
+                                    <button type="button" class="btn btn-secondary btn-small" id="admin-calendar-prev">Previous</button>
+                                    <h3 id="admin-calendar-month">Month</h3>
+                                    <button type="button" class="btn btn-secondary btn-small" id="admin-calendar-next">Next</button>
+                                </div>
+                                <div class="admin-calendar-weekdays" aria-hidden="true">
+                                    <span>Sun</span>
+                                    <span>Mon</span>
+                                    <span>Tue</span>
+                                    <span>Wed</span>
+                                    <span>Thu</span>
+                                    <span>Fri</span>
+                                    <span>Sat</span>
+                                </div>
+                                <div id="admin-calendar-grid" class="admin-calendar-grid" aria-label="Admin event calendar"></div>
+                            </div>
+
+                            <div class="admin-event-panel">
+                                <h3 id="admin-selected-date">Select a date</h3>
+                                <div id="admin-event-list" class="admin-event-list"></div>
+                                <form id="admin-event-form">
+                                    <input type="hidden" id="admin-event-index">
+                                    <div class="input-group">
+                                        <label for="admin-event-title">Event Title</label>
+                                        <input type="text" id="admin-event-title" required>
+                                    </div>
+                                    <div class="input-group">
+                                        <label for="admin-event-description">Description</label>
+                                        <textarea id="admin-event-description" rows="3"></textarea>
+                                    </div>
+                                    <div class="admin-event-actions">
+                                        <button type="submit" class="btn" id="admin-save-event">Add Event</button>
+                                        <button type="button" class="btn btn-secondary" id="admin-cancel-event-edit" hidden>Cancel Edit</button>
+                                    </div>
+                                </form>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -198,6 +341,250 @@
         </div>
     </div>
 
+    <script type="module">
+        import { doc, getDoc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        import { db } from "./js/firebase.js";
+
+        (function () {
+            const calendarDocRef = doc(db, "sharedData", "calendarEvents");
+            const monthLabel = document.getElementById("admin-calendar-month");
+            const calendarGrid = document.getElementById("admin-calendar-grid");
+            const selectedDateLabel = document.getElementById("admin-selected-date");
+            const eventList = document.getElementById("admin-event-list");
+            const eventForm = document.getElementById("admin-event-form");
+            const eventIndexInput = document.getElementById("admin-event-index");
+            const titleInput = document.getElementById("admin-event-title");
+            const descriptionInput = document.getElementById("admin-event-description");
+            const saveButton = document.getElementById("admin-save-event");
+            const cancelEditButton = document.getElementById("admin-cancel-event-edit");
+            const today = new Date();
+            let visibleMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+            let selectedDate = toDateKey(today);
+            let calendarEvents = {};
+
+            if (!calendarGrid || !eventForm) return;
+
+            loadCloudEvents();
+            onSnapshot(calendarDocRef, (snapshot) => {
+                calendarEvents = snapshot.exists()
+                    ? normalizeEvents(snapshot.data().events)
+                    : {};
+                renderAdminCalendar();
+                renderSelectedEvents();
+            }, (error) => {
+                console.warn("Unable to listen for calendar updates:", error);
+            });
+
+            document.getElementById("admin-calendar-prev").addEventListener("click", () => {
+                visibleMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() - 1, 1);
+                renderAdminCalendar();
+            });
+
+            document.getElementById("admin-calendar-next").addEventListener("click", () => {
+                visibleMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() + 1, 1);
+                renderAdminCalendar();
+            });
+
+            eventForm.addEventListener("submit", (event) => {
+                event.preventDefault();
+                const title = titleInput.value.trim();
+                const description = descriptionInput.value.trim();
+                if (!title) return;
+
+                const events = cloneEvents(calendarEvents);
+                const dateEvents = events[selectedDate] || [];
+                const editIndex = eventIndexInput.value;
+                const eventData = { title, description };
+
+                if (editIndex === "") {
+                    dateEvents.push(eventData);
+                } else {
+                    dateEvents[Number(editIndex)] = eventData;
+                }
+
+                events[selectedDate] = dateEvents;
+                writeEvents(events);
+                resetForm();
+                renderAdminCalendar();
+                renderSelectedEvents();
+            });
+
+            cancelEditButton.addEventListener("click", resetForm);
+
+            function renderAdminCalendar() {
+                const events = calendarEvents;
+                const year = visibleMonth.getFullYear();
+                const month = visibleMonth.getMonth();
+                const firstDay = new Date(year, month, 1);
+                const startDate = new Date(year, month, 1 - firstDay.getDay());
+
+                monthLabel.textContent = visibleMonth.toLocaleDateString(undefined, {
+                    month: "long",
+                    year: "numeric"
+                });
+                calendarGrid.innerHTML = "";
+
+                for (let index = 0; index < 42; index += 1) {
+                    const cellDate = new Date(startDate);
+                    cellDate.setDate(startDate.getDate() + index);
+                    const dateKey = toDateKey(cellDate);
+                    const button = document.createElement("button");
+                    button.type = "button";
+                    button.className = "admin-calendar-day";
+                    button.textContent = cellDate.getDate();
+                    button.setAttribute("aria-label", cellDate.toDateString());
+
+                    if (cellDate.getMonth() !== month) button.classList.add("is-outside");
+                    if (dateKey === selectedDate) button.classList.add("is-selected");
+                    if ((events[dateKey] || []).length) button.classList.add("has-events");
+
+                    button.addEventListener("click", () => {
+                        selectedDate = dateKey;
+                        resetForm();
+                        renderAdminCalendar();
+                        renderSelectedEvents();
+                    });
+
+                    calendarGrid.appendChild(button);
+                }
+            }
+
+            function renderSelectedEvents() {
+                const events = calendarEvents;
+                const dateEvents = events[selectedDate] || [];
+                selectedDateLabel.textContent = formatDateHeading(selectedDate);
+                eventList.innerHTML = "";
+
+                if (!dateEvents.length) {
+                    const empty = document.createElement("p");
+                    empty.textContent = "No events for this date.";
+                    eventList.appendChild(empty);
+                    return;
+                }
+
+                dateEvents.forEach((eventData, index) => {
+                    const item = document.createElement("div");
+                    item.className = "admin-event-item";
+
+                    const title = document.createElement("strong");
+                    title.textContent = eventData.title;
+                    item.appendChild(title);
+
+                    if (eventData.description) {
+                        const description = document.createElement("p");
+                        description.textContent = eventData.description;
+                        item.appendChild(description);
+                    }
+
+                    const actions = document.createElement("div");
+                    actions.className = "table-actions";
+
+                    const editButton = document.createElement("button");
+                    editButton.type = "button";
+                    editButton.className = "btn btn-small";
+                    editButton.textContent = "Edit";
+                    editButton.addEventListener("click", () => startEdit(index, eventData));
+
+                    const deleteButton = document.createElement("button");
+                    deleteButton.type = "button";
+                    deleteButton.className = "remove-btn";
+                    deleteButton.textContent = "Delete";
+                    deleteButton.addEventListener("click", () => deleteEvent(index));
+
+                    actions.append(editButton, deleteButton);
+                    item.appendChild(actions);
+                    eventList.appendChild(item);
+                });
+            }
+
+            function startEdit(index, eventData) {
+                eventIndexInput.value = index;
+                titleInput.value = eventData.title || "";
+                descriptionInput.value = eventData.description || "";
+                saveButton.textContent = "Save Changes";
+                cancelEditButton.hidden = false;
+                titleInput.focus();
+            }
+
+            function deleteEvent(index) {
+                const events = cloneEvents(calendarEvents);
+                const dateEvents = events[selectedDate] || [];
+                dateEvents.splice(index, 1);
+
+                if (dateEvents.length) {
+                    events[selectedDate] = dateEvents;
+                } else {
+                    delete events[selectedDate];
+                }
+
+                writeEvents(events);
+                resetForm();
+                renderAdminCalendar();
+                renderSelectedEvents();
+            }
+
+            function resetForm() {
+                eventIndexInput.value = "";
+                eventForm.reset();
+                saveButton.textContent = "Add Event";
+                cancelEditButton.hidden = true;
+            }
+
+            function writeEvents(events) {
+                calendarEvents = normalizeEvents(events);
+                renderAdminCalendar();
+                renderSelectedEvents();
+                setDoc(calendarDocRef, {
+                    events: calendarEvents,
+                    updatedAt: new Date().toISOString()
+                }).catch((error) => {
+                    console.warn("Unable to save calendar events to Firebase:", error);
+                    alert("Unable to save calendar events. Please check Firebase permissions.");
+                });
+            }
+
+            async function loadCloudEvents() {
+                try {
+                    const snapshot = await getDoc(calendarDocRef);
+                    calendarEvents = snapshot.exists()
+                        ? normalizeEvents(snapshot.data().events)
+                        : {};
+                    renderAdminCalendar();
+                    renderSelectedEvents();
+                } catch (error) {
+                    console.warn("Unable to load cloud calendar events:", error);
+                }
+            }
+
+            function normalizeEvents(value) {
+                return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+            }
+
+            function cloneEvents(events) {
+                return JSON.parse(JSON.stringify(normalizeEvents(events)));
+            }
+
+            function toDateKey(date) {
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, "0");
+                const day = String(date.getDate()).padStart(2, "0");
+                return `${year}-${month}-${day}`;
+            }
+
+            function formatDateHeading(dateKey) {
+                const date = new Date(`${dateKey}T00:00:00`);
+                return date.toLocaleDateString(undefined, {
+                    weekday: "long",
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric"
+                });
+            }
+
+            renderAdminCalendar();
+            renderSelectedEvents();
+        }());
+    </script>
     <script type="module" src="js/admin.js"></script>
     <script src="js/main.js"></script>
 </body>
