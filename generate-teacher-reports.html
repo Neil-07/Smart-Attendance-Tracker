@@ -66,14 +66,14 @@
                 </div>
 
                 <button id="generate-btn" type="button" class="btn">Generate Report</button>
-                <button id="export-btn" type="button" class="btn">Export CSV</button>
+                <button id="export-btn" type="button" class="btn">Export Excel</button>
             </div>
 
             <!-- SUMMARY -->
             <div class="card" id="summary" style="display:none;">
                 <h3>Total Records: <span id="total"></span></h3>
                 <h3>Unique Students: <span id="unique"></span></h3>
-                <h3>Attendance %: <span id="percent"></span></h3>
+                
             </div>
 
             <!-- TABLE -->
@@ -98,156 +98,290 @@
     </div>
 </div>
 
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
 <script type="module">
-        import { db } from "./js/firebase.js";
-        import { collection, getDocs } 
-        from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-        let reportData = [];
+            import { db } from "./js/firebase.js";
 
-        async function generateReport() {
+            import {
+                collection,
+                getDocs
+            }
+            from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-            const dept = document.getElementById("department").value;
-            const fromDate = document.getElementById("from-date").value;
-            const toDate = document.getElementById("to-date").value;
+            let reportData = [];
 
-            const attendanceSnap = await getDocs(collection(db, "attendance"));
-            const usersSnap = await getDocs(collection(db, "users"));
 
-            const userMap = {};
-            usersSnap.forEach(doc => {
-                const data = doc.data();
-                userMap[data.email] = data;
-            });
+            // GENERATE REPORT
+            async function generateReport() {
 
-            const table = document.getElementById("report-table");
-            table.innerHTML = "";
+                const dept =
+                    document.getElementById("department").value;
 
-            reportData = [];
-            let uniqueStudentsSet = new Set();
+                const fromDate =
+                    document.getElementById("from-date").value;
 
-            attendanceSnap.forEach(docSnap => {
+                const toDate =
+                    document.getElementById("to-date").value;
 
-                const data = docSnap.data();
-                if (!data.timestamp) return;
+                const attendanceSnap =
+                    await getDocs(collection(db, "attendance"));
 
-                const user = userMap[data.studentEmail] || {};
+                const usersSnap =
+                    await getDocs(collection(db, "users"));
 
-                const name = user.name || "Unknown";
-                const department = user.department || "-";
+                const userMap = {};
 
-                const dateObj = new Date(data.timestamp.seconds * 1000);
-                const dateStr = dateObj.toISOString().split("T")[0];
+                usersSnap.forEach(doc => {
 
-                // FILTERS
-                if (dept && department !== dept) return;
-                if (fromDate && dateStr < fromDate) return;
-                if (toDate && dateStr > toDate) return;
+                    const data = doc.data();
 
-                uniqueStudentsSet.add(data.studentEmail);
+                    userMap[data.email] = data;
+                });
 
-                const rowData = {
-                    srNo: reportData.length + 1,
-                    name,
-                    date: dateObj.toLocaleString(),
-                    status: (data.status || "present").toUpperCase()
-                };
+                const table =
+                    document.getElementById("report-table");
 
-                reportData.push(rowData);
+                table.innerHTML = "";
 
-                const row = document.createElement("tr");
+                reportData = [];
 
-                row.innerHTML = `
-                    <td>${rowData.srNo}</td>
-                    <td>${rowData.name}</td>
-                    <td>${rowData.date}</td>
-                    <td>${rowData.status}</td>
-                `;
+                let uniqueStudentsSet = new Set();
 
-                table.appendChild(row);
-            });
+                attendanceSnap.forEach(docSnap => {
 
-            if (reportData.length === 0) {
-                alert("No data found");
-                return;
+                    const data = docSnap.data();
+
+                    if (!data.timestamp) return;
+
+                    const user =
+                        userMap[data.studentEmail] || {};
+
+                    const name =
+                        user.name || "Unknown";
+
+                    const department =
+                        user.department || "-";
+
+                    if (!data.timestamp?.seconds) return;
+
+                    const dateObj =
+                        new Date(data.timestamp.seconds * 1000);
+
+                    const dateStr =
+                        dateObj.toISOString().split("T")[0];
+
+                    // FILTERS
+                    if (dept && department !== dept) return;
+
+                    if (fromDate && dateStr < fromDate) return;
+
+                    if (toDate && dateStr > toDate) return;
+
+                    uniqueStudentsSet.add(data.studentEmail);
+
+                    const rowData = {
+                        srNo: reportData.length + 1,
+                        name,
+                        date: dateObj.toLocaleString(),
+                        status:
+                            (data.status || "present").toUpperCase()
+                    };
+
+                    reportData.push(rowData);
+
+                    const row = document.createElement("tr");
+
+                    row.innerHTML = `
+                        <td style="text-align:center;">${rowData.srNo}</td>
+                        <td>${rowData.name}</td>
+                        <td>${rowData.date}</td>
+                        <td>${rowData.status}</td>
+                    `;
+
+                    table.appendChild(row);
+                });
+
+                if (reportData.length === 0) {
+
+                    alert("No data found");
+
+                    document.getElementById("summary").style.display = "none";
+                    document.getElementById("report-container").style.display = "none";
+
+                    return;
+                }
+
+                // SUMMARY
+                const total = reportData.length;
+
+                const uniqueStudents =
+                    uniqueStudentsSet.size;
+
+
+                document.getElementById("total").innerText =
+                    total;
+
+                document.getElementById("unique").innerText =
+                    uniqueStudents;
+
+                
+
+                document.getElementById("summary").style.display =
+                    "block";
+
+                document.getElementById("report-container").style.display =
+                    "block";
             }
 
-            // CORRECT SUMMARY
-            const total = reportData.length;
-            const uniqueStudents = uniqueStudentsSet.size;
 
-            // percentage = attendance entries per student (basic metric)
-            const percent = ((total / (uniqueStudents || 1)) ).toFixed(2);
 
-            document.getElementById("total").innerText = total;
-            document.getElementById("unique").innerText = uniqueStudents;
-            document.getElementById("percent").innerText = percent;
+            // PROFESSIONAL EXCEL EXPORT
+            function exportCSV() {
 
-            document.getElementById("summary").style.display = "block";
-            document.getElementById("report-container").style.display = "block";
-        }
+                if (reportData.length === 0) {
 
-        // FIXED CSV EXPORT
-       function exportCSV() {
+                    alert("Generate report first");
+                    return;
+                }
 
-            if (reportData.length === 0) {
-                alert("Generate report first");
-                return;
+                const department =
+                document.getElementById("department").value || "All_Departments";
+
+                // GROUP DATA BY STUDENT
+                const studentMap = {};
+
+                const uniqueDates = new Set();
+
+                reportData.forEach(record => {
+
+                    const date =
+                        record.date.split(",")[0];
+
+                    uniqueDates.add(date);
+
+                    if (!studentMap[record.name]) {
+
+                        studentMap[record.name] = {};
+                    }
+
+                    studentMap[record.name][date] =
+                        record.status === "PRESENT" ? "P" : "A";
+                });
+
+                const dates =
+                    Array.from(uniqueDates).sort(
+                        (a, b) => new Date(a) - new Date(b)
+                    );
+
+                // EXCEL DATA
+                const excelData = [];
+
+                // TITLE
+                excelData.push([
+                    `${department.toUpperCase()} ATTENDANCE SHEET`
+                ]);
+
+                excelData.push([]);
+
+                // HEADERS
+                const headers = [
+                    "SR NO",
+                    "NAME"
+                ];
+
+                dates.forEach(date => {
+                    headers.push(date);
+                });
+
+                excelData.push(headers);
+
+                // STUDENT ROWS
+                let srNo = 1;
+
+                Object.keys(studentMap).forEach(studentName => {
+
+                    const row = [
+                        srNo++,
+                        studentName
+                    ];
+
+                    dates.forEach(date => {
+
+                        row.push(
+                            studentMap[studentName][date] || "A"
+                        );
+                    });
+
+                    excelData.push(row);
+                });
+
+                // CREATE SHEET
+                const worksheet =
+                    XLSX.utils.aoa_to_sheet(excelData);
+
+                // COLUMN WIDTHS
+                const cols = [
+                    { wch: 10 },
+                    { wch: 30 }
+                ];
+
+                dates.forEach(() => {
+                    cols.push({ wch: 10 });
+                });
+
+                worksheet["!cols"] = cols;
+
+                // MERGE TITLE
+                worksheet["!merges"] = [
+                    {
+                        s: { r: 0, c: 0 },
+                        e: { r: 0, c: headers.length - 1 }
+                    }
+                ];
+
+                // TITLE STYLE
+                if (worksheet["A1"]) {
+
+                    worksheet["A1"].s = {
+                        font: {
+                            bold: true,
+                            sz: 18
+                        },
+                        alignment: {
+                            horizontal: "center"
+                        }
+                    };
+                }
+
+                // CREATE WORKBOOK
+                const workbook =
+                    XLSX.utils.book_new();
+
+                XLSX.utils.book_append_sheet(
+                    workbook,
+                    worksheet,
+                    "Attendance"
+                );
+
+                // DOWNLOAD
+                XLSX.writeFile(
+                    workbook,
+                    `${department.toLowerCase()}_attendance_sheet.xlsx`
+                );
             }
 
-            const department =
-                document.getElementById("department").value || "COLLEGE";
 
-            const today = new Date();
+            // BUTTON EVENTS
+            document
+                .getElementById("generate-btn")
+                .addEventListener("click", generateReport);
 
-            const formattedDate = today.toLocaleDateString();
-            const formattedTime = today.toLocaleTimeString();
-
-            // PROFESSIONAL HEADER
-            let csv =
-        `${department.toUpperCase()} ATTENDANCE SHEET
-
-        Generated On:,${formattedDate}
-        Generated At:,${formattedTime}
-
-        Sr No,Student Name,Date & Time,Status
-        `;
-
-            // TABLE DATA
-            reportData.forEach(r => {
-
-                const safe = (val) =>
-                    `"${String(val).replace(/"/g, '""')}"`;
-
-                csv +=
-        `${safe(r.srNo)},${safe(r.name)},${safe(r.date)},${safe(r.status)}
-        `;
-            });
-
-            // DOWNLOAD
-            const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-
-            const url = URL.createObjectURL(blob);
-
-            const a = document.createElement("a");
-
-            a.href = url;
-
-            a.download =
-        `${department.toLowerCase().replace(/\s+/g, "_")}_attendance_sheet.csv`;
-
-            document.body.appendChild(a);
-
-            a.click();
-
-            document.body.removeChild(a);
-        }
-
-        // EVENTS
-        document.getElementById("generate-btn").addEventListener("click", generateReport);
-        document.getElementById("export-btn").addEventListener("click", exportCSV);
-        
-        // <!-- Added: shared responsive menu behavior -->
+            document
+                .getElementById("export-btn")
+                .addEventListener("click", exportCSV);
 
 </script>
 
