@@ -123,7 +123,10 @@ async function markAttendance(user) {
                 const teacherLat = sessionData.teacherLat;
                 const teacherLng = sessionData.teacherLng;
 
-                if (!teacherLat || !teacherLng) {
+                if (
+                        teacherLat === undefined ||
+                        teacherLng === undefined
+                    ) {
                     statusText.innerText = "Teacher location missing";
                     return;
                 }
@@ -142,7 +145,7 @@ async function markAttendance(user) {
 
                 // STEP 7: SAVE ATTENDANCE (SECURE)
                 const attendanceId = `${uid}_${sessionId}`;
-
+                console.log("Saving attendance...");
                 await setDoc(doc(db, "attendance", attendanceId), {
                     studentId: uid,
                     studentEmail: studentEmail,
@@ -152,6 +155,8 @@ async function markAttendance(user) {
                     timestamp: new Date(),
                     status: "present"
                 });
+
+                console.log("Attendance saved successfully");
 
                 statusText.innerText = "Attendance marked successfully";
 
