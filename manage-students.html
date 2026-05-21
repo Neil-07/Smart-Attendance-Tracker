@@ -73,6 +73,7 @@
                             <option value="Computer Science">Computer Science</option>
                             <option value="IT">IT</option>
                             <option value="EXTC">EXTC</option>
+                            <option value="Mechanical">Mechanical</option>
                         </select>
                     </div>
 
@@ -104,82 +105,172 @@
 
 <!-- SCRIPT -->
 <script type="module">
-import { db } from "./js/firebase.js";
-import { collection, addDoc, getDocs, deleteDoc, doc, query, where } 
-from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-const form = document.getElementById("add-student-form");
-const tableBody = document.getElementById("student-table-body");
+        import { db, auth } from "./js/firebase.js";
 
-// LOAD STUDENTS
-async function loadStudents() {
-    const snapshot = await getDocs(collection(db, "users"));
+        import {
+            collection,
+            addDoc,
+            getDocs,
+            deleteDoc,
+            doc,
+            query,
+            where,
+            getDoc
+        }
+        from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-    tableBody.innerHTML = "";
+        import {
+            onAuthStateChanged
+        }
+        from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-    snapshot.forEach(docSnap => {
-        const data = docSnap.data();
 
-        if (data.role !== "student") return;
+        const form =
+            document.getElementById("add-student-form");
 
-        const row = document.createElement("tr");
+        const tableBody =
+            document.getElementById("student-table-body");
 
-        row.innerHTML = `
-            <td>${data.name}</td>
-            <td>${data.email}</td>
-            <td>${data.department || "-"}</td>
-            <td>
-                <button class="remove-btn" onclick="deleteStudent('${docSnap.id}')">
-                    Delete
-                </button>
-            </td>
-        `;
+        let teacherDepartment = "";
 
-        tableBody.appendChild(row);
-    });
-}
 
-// ADD STUDENT
-form.addEventListener("submit", async (e) => {
-    e.preventDefault();
+        // GET LOGGED IN TEACHER
+        onAuthStateChanged(auth, async (user) => {
 
-    const name = document.getElementById("student-name").value;
-    const email = document.getElementById("student-email").value;
-    const department = document.getElementById("student-department").value;
+            if (!user) {
 
-    // CHECK DUPLICATE
-    const q = query(collection(db, "users"), where("email", "==", email));
-    const existing = await getDocs(q);
+                window.location.href = "login.html";
+                return;
+            }
 
-    if (!existing.empty) {
-        alert("Student already exists");
-        return;
-    }
+            const teacherRef =
+                doc(db, "users", user.uid);
 
-    await addDoc(collection(db, "users"), {
-        name,
-        email,
-        department,
-        role: "student",
-        createdAt: new Date()
-    });
+            const teacherSnap =
+                await getDoc(teacherRef);
 
-    alert("Student added");
+            if (!teacherSnap.exists()) {
 
-    form.reset();
-    loadStudents();
-});
+                alert("Teacher data not found");
+                return;
+            }
 
-// DELETE STUDENT
-window.deleteStudent = async function (id) {
-    if (!confirm("Delete this student?")) return;
+            const teacherData =
+                teacherSnap.data();
 
-    await deleteDoc(doc(db, "users", id));
-    loadStudents();
-};
+            teacherDepartment =
+                teacherData.department;
 
-// INIT
-loadStudents();
+            // AUTO SELECT TEACHER DEPARTMENT
+            document.getElementById("student-department").value =
+                teacherDepartment;
+
+            loadStudents();
+        });
+
+
+        // LOAD STUDENTS
+        async function loadStudents() {
+
+            const snapshot =
+                await getDocs(collection(db, "users"));
+
+            tableBody.innerHTML = "";
+
+            snapshot.forEach(docSnap => {
+
+                const data =
+                    docSnap.data();
+
+                // ONLY STUDENTS
+                if (data.role !== "student") return;
+
+                // ONLY SAME DEPARTMENT
+                if (data.department !== teacherDepartment) return;
+
+                const row =
+                    document.createElement("tr");
+
+                row.innerHTML = `
+                    <td>${data.name}</td>
+                    <td>${data.email}</td>
+                    <td>${data.department || "-"}</td>
+                    <td>
+                        <button class="remove-btn"
+                            onclick="deleteStudent('${docSnap.id}')">
+                            Delete
+                        </button>
+                    </td>
+                `;
+
+                tableBody.appendChild(row);
+            });
+        }
+
+
+        // ADD STUDENT
+        form.addEventListener("submit", async (e) => {
+
+            e.preventDefault();
+
+            const name =
+                document.getElementById("student-name").value;
+
+            const email =
+                document.getElementById("student-email").value;
+
+            // FORCE SAME DEPARTMENT AS TEACHER
+            const department =
+                teacherDepartment;
+
+            // CHECK DUPLICATE
+            const q =
+                query(
+                    collection(db, "users"),
+                    where("email", "==", email)
+                );
+
+            const existing =
+                await getDocs(q);
+
+            if (!existing.empty) {
+
+                alert("Student already exists");
+                return;
+            }
+
+            await addDoc(collection(db, "users"), {
+
+                name,
+                email,
+                department,
+                role: "student",
+                createdAt: new Date()
+            });
+
+            alert("Student added");
+
+            form.reset();
+
+            document.getElementById("student-department").value =
+                teacherDepartment;
+
+            loadStudents();
+        });
+
+
+        // DELETE STUDENT
+        window.deleteStudent = async function (id) {
+
+            if (!confirm("Delete this student?")) return;
+
+            await deleteDoc(doc(db, "users", id));
+
+            loadStudents();
+        };
+        
+
 </script>
 
 <script src="js/main.js"></script>

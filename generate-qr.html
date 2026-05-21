@@ -64,7 +64,13 @@
 import { getAuth } 
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-import { collection, addDoc, doc, getDoc } 
+import {
+    collection,
+    addDoc,
+    doc,
+    getDoc,
+    updateDoc
+}
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 import { db } from "./js/firebase.js";
@@ -76,70 +82,130 @@ window.generateQR = async function () {
     const user = auth.currentUser;
 
     if (!user) {
+
         alert("Login first");
         return;
     }
 
+    // QR VALID FOR 45 SECONDS
     const startTime = new Date();
-    const endTime = new Date(startTime.getTime() + 5 * 60 * 1000);
+
+    const endTime =
+        new Date(startTime.getTime() + 45 * 1000);
 
     try {
-        const userRef = doc(db, "users", user.uid);
-        const userSnap = await getDoc(userRef);
+
+        const userRef =
+            doc(db, "users", user.uid);
+
+        const userSnap =
+            await getDoc(userRef);
 
         if (!userSnap.exists()) {
+
             alert("Teacher data not found");
             return;
         }
 
-        const teacherData = userSnap.data();
+        const teacherData =
+            userSnap.data();
 
         if (!teacherData.department) {
+
             alert("Teacher department missing");
             return;
         }
 
-        navigator.geolocation.getCurrentPosition(async (position) => {
+        navigator.geolocation.getCurrentPosition(
 
-            const teacherLat = position.coords.latitude;
-            const teacherLng = position.coords.longitude;
+            async (position) => {
 
-            try {
-                const docRef = await addDoc(collection(db, "sessions"), {
-                    teacherId: user.uid,
-                    startTime: startTime,
-                    endTime: endTime,
-                    isActive: true,
-                    teacherLat: teacherLat,
-                    teacherLng: teacherLng,
-                    department: teacherData.department
-                });
+                const teacherLat =
+                    position.coords.latitude;
 
-                const sessionId = docRef.id;
+                const teacherLng =
+                    position.coords.longitude;
 
-                const qrData = `${window.location.origin}/attendance.html?session=${sessionId}`;
+                try {
 
-                document.getElementById("qr-code-image").src =
+                    // CREATE SESSION
+                    const docRef =
+                        await addDoc(
+                            collection(db, "sessions"),
+                            {
+                                teacherId: user.uid,
+                                startTime: startTime,
+                                endTime: endTime,
+                                isActive: true,
+                                teacherLat: teacherLat,
+                                teacherLng: teacherLng,
+                                department: teacherData.department
+                            }
+                        );
+
+                    const sessionId =
+                        docRef.id;
+
+                    // QR DATA
+                    const qrData =
+                        `${window.location.origin}/attendance.html?session=${sessionId}`;
+
+                    // GENERATE QR IMAGE
+                    document.getElementById(
+                        "qr-code-image"
+                    ).src =
                     `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrData)}`;
 
-                alert("QR Generated Successfully");
+                    alert("QR Generated Successfully");
 
-            } catch (error) {
-                console.error(error);
-                alert("Error creating session");
+                    // AUTO EXPIRE AFTER 45 SEC
+                    setTimeout(async () => {
+
+                        try {
+
+                            await updateDoc(
+                                doc(db, "sessions", sessionId),
+                                {
+                                    isActive: false
+                                }
+                            );
+
+                            // REMOVE QR IMAGE
+                            document.getElementById(
+                                "qr-code-image"
+                            ).src = "";
+
+                            alert("QR Session Expired");
+
+                        } catch (error) {
+
+                            console.error(error);
+                        }
+
+                    }, 45000);
+
+                } catch (error) {
+
+                    console.error(error);
+                    alert("Error creating session");
+                }
+
+            },
+
+            () => {
+
+                alert("Location permission required");
             }
-
-        }, () => {
-            alert("Location permission required");
-        });
+        );
 
     } catch (error) {
+
         console.error(error);
         alert("Error fetching teacher data");
     }
 };
 
-</script>
+</script> 
 
 <script src="js/main.js"></script>
 
