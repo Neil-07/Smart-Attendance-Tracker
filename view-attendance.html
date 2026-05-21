@@ -45,6 +45,121 @@
             </div>
         </div>
     </div>
+    <script type="module">
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import { collection, query, where, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        import { db } from "./js/firebase.js";
+
+        const auth = getAuth();
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                window.location.href = "login.html";
+                return;
+            }
+
+            try {
+                // 1. Get Student Data
+                const userRef = doc(db, "users", user.uid);
+                const userSnap = await getDoc(userRef);
+                if (!userSnap.exists()) return;
+                const userData = userSnap.data();
+                const studentDept = userData.department;
+
+                // 2. Fetch Subjects from Timetable
+                const timetableRef = doc(db, "timetable", "week1");
+                const timetableSnap = await getDoc(timetableRef);
+                const subjects = new Set();
+                if (timetableSnap.exists()) {
+                    Object.values(timetableSnap.data()).forEach(s => {
+                        if (s && s !== "-" && s !== "Short Break" && s !== "Lunch Break") subjects.add(s.trim());
+                    });
+                }
+
+                // 3. Fetch All Sessions for this Department
+                const sessionsQuery = query(collection(db, "sessions"), where("department", "==", studentDept));
+                const sessionsSnap = await getDocs(sessionsQuery);
+                const totalSessions = {}; // subject -> count
+                const sessionToSubject = {}; // sessionId -> subject
+
+                sessionsSnap.forEach(doc => {
+                    const data = doc.data();
+                    if (data.subject) {
+                        totalSessions[data.subject] = (totalSessions[data.subject] || 0) + 1;
+                        sessionToSubject[doc.id] = data.subject;
+                    }
+                });
+
+                // 4. Fetch Student's Attendance Records
+                const attendanceQuery = query(collection(db, "attendance"), where("studentId", "==", user.uid));
+                const attendanceSnap = await getDocs(attendanceQuery);
+                const presentSessions = {}; // subject -> count
+
+                attendanceSnap.forEach(doc => {
+                    const data = doc.data();
+                    const subject = sessionToSubject[data.sessionId];
+                    if (subject) {
+                        presentSessions[subject] = (presentSessions[subject] || 0) + 1;
+                    }
+                });
+
+                // 5. Calculate Percentages
+                const subjectList = Array.from(subjects).sort();
+                const attendanceData = subjectList.map(subject => {
+                    const total = totalSessions[subject] || 0;
+                    const present = presentSessions[subject] || 0;
+                    return total > 0 ? Math.round((present / total) * 100) : 0;
+                });
+
+                // 6. Update Chart
+                updateChart(subjectList, attendanceData);
+
+                // 7. Update Defaulter Status
+                updateDefaulterStatus(subjectList, attendanceData);
+
+            } catch (error) {
+                console.error("Error loading attendance data:", error);
+            }
+        });
+
+        function updateChart(labels, data) {
+            const ctx = document.getElementById("attendanceChart").getContext("2d");
+            if (window.myChart) window.myChart.destroy();
+            
+            window.myChart = new Chart(ctx, {
+                type: "bar",
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: "Attendance Percentage",
+                        data: data,
+                        backgroundColor: "rgba(54, 189, 248, 0.2)",
+                        borderColor: "rgba(54, 189, 248, 1)",
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: { beginAtZero: true, max: 100 }
+                    }
+                }
+            });
+        }
+
+        function updateDefaulterStatus(labels, data) {
+            const statusEl = document.getElementById("defaulter-status");
+            const threshold = 75;
+            const defaulters = labels.filter((label, i) => data[i] < threshold);
+
+            if (defaulters.length > 0) {
+                statusEl.textContent = `You are on the defaulter list for: ${defaulters.join(", ")}. (Threshold: ${threshold}%)`;
+                statusEl.style.color = "#F87171";
+            } else {
+                statusEl.textContent = "Congratulations! Your attendance is above the 75% threshold in all subjects.";
+                statusEl.style.color = "#34D399";
+            }
+        }
+    </script>
     <script src="js/main.js"></script>
 </body>
 </html>
