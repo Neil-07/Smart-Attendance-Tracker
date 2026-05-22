@@ -51,7 +51,7 @@
                     </select>
                 </div>
 
-                <img id="qr-code-image" src="/images/qrcode.svg" alt="QR Code">
+                <img id="qr-code-image" src="images/qrcode.svg" alt="QR Code Placeholder">
 
                 <div class="qr-actions">
                     <button onclick="generateQR()">Generate QR</button>
@@ -226,10 +226,10 @@ window.generateQR = async function () {
                                 }
                             );
 
-                            // REMOVE QR IMAGE
+                            // RESET QR IMAGE
                             document.getElementById(
                                 "qr-code-image"
-                            ).src = "";
+                            ).src = "images/qrcode.svg";
 
                             alert("QR Session Expired");
 
