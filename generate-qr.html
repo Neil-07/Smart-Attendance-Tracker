@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Generate QR Code - Smart Attendance Tracker</title>
-
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
 </head>
 
@@ -42,8 +44,14 @@
             <h1>Generate QR for Attendance</h1>
 
             <div class="card">
+                <div class="input-group" style="text-align: left; max-width: 300px; margin: 0 auto 20px;">
+                    <label for="subject-select">Select Subject</label>
+                    <select id="subject-select">
+                        <option value="">-- Select Subject --</option>
+                    </select>
+                </div>
 
-                <img id="qr-code-image" src="" alt="QR Code">
+                <img id="qr-code-image" src="/images/qrcode.svg" alt="QR Code">
 
                 <div class="qr-actions">
                     <button onclick="generateQR()">Generate QR</button>
@@ -61,7 +69,7 @@
 
 <script type="module">
 
-import { getAuth } 
+import { getAuth, onAuthStateChanged } 
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 import {
@@ -77,13 +85,60 @@ import { db } from "./js/firebase.js";
 
 const auth = getAuth();
 
+// Fetch subjects on load
+onAuthStateChanged(auth, async (user) => {
+    if (!user) return;
+    
+    const subjectSelect = document.getElementById("subject-select");
+    try {
+        const userRef = doc(db, "users", user.uid);
+        const userSnap = await getDoc(userRef);
+        
+        if (userSnap.exists()) {
+            const userData = userSnap.data();
+            const subjects = new Set();
+            
+            // Add subjects assigned to teacher
+            if (userData.subjects) {
+                userData.subjects.split(",").forEach(s => subjects.add(s.trim()));
+            }
+            
+            // Also add subjects from timetable
+            const timetableRef = doc(db, "timetable", "week1");
+            const timetableSnap = await getDoc(timetableRef);
+            if (timetableSnap.exists()) {
+                const timetableData = timetableSnap.data();
+                Object.values(timetableData).forEach(s => {
+                    if (s && s !== "-" && s !== "Short Break" && s !== "Lunch Break") {
+                        subjects.add(s.trim());
+                    }
+                });
+            }
+            
+            subjects.forEach(subject => {
+                const option = document.createElement("option");
+                option.value = subject;
+                option.textContent = subject;
+                subjectSelect.appendChild(option);
+            });
+        }
+    } catch (error) {
+        console.error("Error fetching subjects:", error);
+    }
+});
+
 window.generateQR = async function () {
 
     const user = auth.currentUser;
+    const subject = document.getElementById("subject-select").value;
 
     if (!user) {
-
         alert("Login first");
+        return;
+    }
+
+    if (!subject) {
+        alert("Please select a subject");
         return;
     }
 
@@ -134,6 +189,7 @@ window.generateQR = async function () {
                             collection(db, "sessions"),
                             {
                                 teacherId: user.uid,
+                                subject: subject,
                                 startTime: startTime,
                                 endTime: endTime,
                                 isActive: true,

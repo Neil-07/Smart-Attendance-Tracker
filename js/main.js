@@ -198,7 +198,7 @@ function isMobileViewport() {
 function initializeAttendanceChart() {
     const attendanceChartCanvas = document.getElementById("attendanceChart");
 
-    if (!attendanceChartCanvas || typeof Chart === "undefined") {
+    if (!attendanceChartCanvas || typeof Chart === "undefined" || window.location.pathname.includes("view-attendance.html")) {
         return;
     }
 

@@ -75,17 +75,18 @@ async function markAttendance(user) {
         }
 
         const sessionData = sessionSnap.data();
+        const subject = sessionData.subject || "Unknown Subject";
 
         // STEP 2: CHECK ACTIVE
         if (!sessionData.isActive) {
-            statusText.innerText = "Session closed";
+            statusText.innerText = `Session for ${subject} is closed`;
             return;
         }
 
         // STEP 3: CHECK EXPIRY
         const now = new Date();
         if (sessionData.endTime && now > sessionData.endTime.toDate()) {
-            statusText.innerText = "QR expired";
+            statusText.innerText = `QR for ${subject} expired`;
             return;
         }
 
@@ -102,17 +103,17 @@ async function markAttendance(user) {
 
         // STEP 5: DEPARTMENT CHECK
         if (!userData.department || !sessionData.department) {
-            statusText.innerText = "Department data missing";
+            statusText.innerText = `Department data missing for ${subject}`;
             return;
         }
 
         if (normalize(userData.department) !== normalize(sessionData.department)) {
-            statusText.innerText = "You are in wrong department";
+            statusText.innerText = `You are in wrong department for ${subject}`;
             return;
         }
 
         // STEP 6: LOCATION CHECK
-        statusText.innerText = "Getting location...";
+        statusText.innerText = `Checking location for ${subject}...`;
 
         navigator.geolocation.getCurrentPosition(
             async (position) => {
@@ -127,7 +128,7 @@ async function markAttendance(user) {
                         teacherLat === undefined ||
                         teacherLng === undefined
                     ) {
-                    statusText.innerText = "Teacher location missing";
+                    statusText.innerText = `Teacher location missing for ${subject}`;
                     return;
                 }
 
@@ -135,11 +136,11 @@ async function markAttendance(user) {
 
                 console.log("Distance:", distance);
 
-                statusText.innerText = `Distance: ${Math.round(distance)}m - Checking...`;
+                statusText.innerText = `${subject}: Distance ${Math.round(distance)}m - Checking...`;
 
                 // Realistic threshold
                 if (distance > 100) {
-                    statusText.innerText = "You are too far from classroom";
+                    statusText.innerText = `You are too far from ${subject} classroom`;
                     return;
                 }
 
@@ -158,7 +159,7 @@ async function markAttendance(user) {
 
                 console.log("Attendance saved successfully");
 
-                statusText.innerText = "Attendance marked successfully";
+                statusText.innerText = `Attendance for ${subject} marked successfully`;
 
             },
             (error) => {
